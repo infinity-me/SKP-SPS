@@ -1,0 +1,24 @@
+[
+  {
+    "name": "Super Admin",
+    "email": "admin@skpsainik.edu.in",
+    "password": "password123",
+    "role": "admin",
+    "id": 1770821937785
+  },
+  {
+    "name": "Abhishek Maurya",
+    "email": "abhishek@skpsainik.edu.in",
+    "password": "password123",
+    "role": "teacher",
+    "id": 1770821937785
+  },
+  {
+    "name": "Rahul Sharma",
+    "email": "rahul@student.edu.in",
+    "password": "password123",
+    "role": "student",
+    "schoolId": "SPS2026001",
+    "id": 1770821937786
+  }
+]

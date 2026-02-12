@@ -1,0 +1,97 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = "file:./dev.db"
+}
+
+model User {
+  id        Int      @id @default(autoincrement())
+  name      String
+  email     String   @unique
+  phone     String?  @unique
+  password  String
+  role      String   // admin, teacher, student
+  schoolId  String?  @unique
+  createdAt DateTime @default(now())
+  
+  studentProfile Student?
+  teacherProfile Teacher?
+}
+
+model Student {
+  id           Int      @id @default(autoincrement())
+  userId       Int      @unique
+  user         User     @relation(fields: [userId], references: [id])
+  admissionNo  String   @unique
+  class        String
+  section      String
+  rollNo       Int?
+  dob          DateTime?
+  address      String?
+  parentName   String?
+  
+  fees         Fee[]
+  attendance   Attendance[]
+  results      Result[]
+}
+
+model Teacher {
+  id           Int      @id @default(autoincrement())
+  userId       Int      @unique
+  user         User     @relation(fields: [userId], references: [id])
+  staffId      String   @unique
+  designation  String
+  qualification String
+}
+
+model Fee {
+  id          Int      @id @default(autoincrement())
+  studentId   Int
+  student     Student  @relation(fields: [studentId], references: [id])
+  amount      Float
+  type        String
+  status      String   // paid, pending, partial
+  dueDate     DateTime
+}
+
+model Attendance {
+  id          Int      @id @default(autoincrement())
+  studentId   Int
+  student     Student  @relation(fields: [studentId], references: [id])
+  date        DateTime
+  status      String   // present, absent, late
+  period      Int?
+}
+
+model Result {
+  id          Int      @id @default(autoincrement())
+  studentId   Int
+  student     Student  @relation(fields: [studentId], references: [id])
+  subject     String
+  marks       Int
+  total       Int
+  term        String
+}
+
+model Circular {
+  id          Int      @id @default(autoincrement())
+  title       String
+  category    String
+  date        DateTime @default(now())
+  description String
+}
+
+model Admission {
+  id           Int      @id @default(autoincrement())
+  firstName    String
+  lastName     String
+  email        String
+  phone        String
+  class        String
+  previousSchool String?
+  status       String   @default("pending") // pending, reviewed, accepted
+  createdAt    DateTime @default(now())
+}

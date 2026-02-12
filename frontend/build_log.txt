@@ -1,0 +1,22 @@
+
+> frontend@0.1.0 build
+> next build
+
+Γû▓ Next.js 16.1.6 (Turbopack)
+
+  Creating an optimized production build ...
+Γ£ô Compiled successfully in 3.6s
+  Running TypeScript ...
+Failed to compile.
+
+./src/app/pay-fees/page.tsx:138:38
+Type error: Cannot find name 'Link'.
+
+  136 |                                     </div>
+  137 |
+> 138 |                                     <Link href="/login" className="w-full py-4 bg-white/5 border border-white/10 text-white rounded-2xl flex items-center justify-center gap-2 hover:bg-white/10 transition-all">
+      |                                      ^
+  139 |                                         <Receipt size={20} />
+  140 |                                         View Payment History
+  141 |                                     </Link>
+Next.js build worker exited with code: 1 and signal: null
