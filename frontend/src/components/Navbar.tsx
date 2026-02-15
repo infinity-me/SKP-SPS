@@ -72,6 +72,12 @@ export default function Navbar() {
 
                 <div className="hidden lg:flex items-center gap-4">
                     <Link
+                        href="/login"
+                        className="text-white/80 hover:text-gold-500 transition-colors font-medium text-sm mr-2"
+                    >
+                        Login
+                    </Link>
+                    <Link
                         href="/pay-fees"
                         className="px-5 py-2 rounded-full border border-gold-500 text-gold-500 text-sm font-semibold hover:bg-gold-500 hover:text-primary transition-all duration-300"
                     >
@@ -109,8 +115,16 @@ export default function Navbar() {
                     ))}
                     <div className="flex flex-col gap-4 pt-4 border-t border-white/10">
                         <Link
+                            href="/login"
+                            className="w-full py-3 text-center rounded-xl text-white/80 font-bold border border-white/10"
+                            onClick={() => setMobileMenuOpen(false)}
+                        >
+                            Login
+                        </Link>
+                        <Link
                             href="/pay-fees"
                             className="w-full py-3 text-center rounded-xl border border-gold-500 text-gold-500 font-bold"
+                            onClick={() => setMobileMenuOpen(false)}
                         >
                             Pay Fees
                         </Link>

@@ -1,22 +1,33 @@
 "use client"
 
-import { useState } from "react"
-import { useRouter } from "next/navigation"
+import { useState, useEffect, Suspense } from "react"
+import { useRouter, useSearchParams } from "next/navigation"
 import Image from "next/image"
 import Link from "next/link"
 import { motion } from "framer-motion"
-import { LogIn, Github, Mail, Phone, Fingerprint, ShieldCheck } from "lucide-react"
+import { LogIn, Phone, Mail, Fingerprint, ShieldCheck } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { authService } from "@/lib/api"
 
-export default function AuthPage() {
-    const [role, setRole] = useState<"student" | "teacher" | "admin">("student")
+function AuthContent() {
+    const searchParams = useSearchParams()
+    const isAdminMode = searchParams.get('role') === 'admin'
+
+    const [role, setRole] = useState<"student" | "teacher" | "admin">(isAdminMode ? "admin" : "student")
     const [authMethod, setAuthMethod] = useState<"id" | "phone" | "google">("id")
     const [email, setEmail] = useState("")
     const [password, setPassword] = useState("")
     const [isLoading, setIsLoading] = useState(false)
     const [error, setError] = useState("")
     const router = useRouter()
+
+    useEffect(() => {
+        if (isAdminMode) {
+            setRole("admin")
+        } else {
+            setRole("student")
+        }
+    }, [isAdminMode])
 
     const handleLogin = async (e: React.FormEvent) => {
         e.preventDefault()
@@ -26,9 +37,7 @@ export default function AuthPage() {
         try {
             const response = await authService.login({ email, password, role })
             if (response.data.success) {
-                // Store basic user info (simplified for demo)
                 localStorage.setItem('user', JSON.stringify(response.data.user))
-                // Redirect based on role
                 router.push(`/${role}`)
             } else {
                 setError(response.data.message || "Invalid credentials")
@@ -39,6 +48,8 @@ export default function AuthPage() {
             setIsLoading(false)
         }
     }
+
+    const availableRoles = isAdminMode ? ["admin"] : ["student", "teacher"]
 
     return (
         <div className="min-h-screen flex flex-col md:flex-row bg-white overflow-hidden">
@@ -95,12 +106,12 @@ export default function AuthPage() {
                 <div className="w-full max-w-sm space-y-8">
                     <div className="space-y-2">
                         <h1 className="text-3xl font-heading font-black text-primary tracking-tight">Login</h1>
-                        <p className="text-muted-foreground">Select your role and login method to continue.</p>
+                        <p className="text-muted-foreground">{isAdminMode ? "Admin Authentication Portal" : "Select your role and login method to continue."}</p>
                     </div>
 
                     {/* Role Selection */}
                     <div className="flex bg-slate-100 p-1 rounded-2xl">
-                        {(["student", "teacher", "admin"] as const).map((r) => (
+                        {availableRoles.map((r: any) => (
                             <button
                                 key={r}
                                 onClick={() => setRole(r)}
@@ -115,24 +126,28 @@ export default function AuthPage() {
                     </div>
 
                     {/* Social Login */}
-                    <div className="space-y-3">
-                        <button
-                            onClick={() => setAuthMethod("google")}
-                            className="w-full flex items-center justify-center gap-3 py-3 border border-slate-200 rounded-xl hover:bg-slate-50 transition-all font-semibold text-primary shadow-sm"
-                        >
-                            <Image src="https://www.gstatic.com/images/branding/product/1x/gsa_512dp.png" alt="Google" width={20} height={20} />
-                            Continue with Google
-                        </button>
-                    </div>
+                    {!isAdminMode && (
+                        <div className="space-y-3">
+                            <button
+                                onClick={() => setAuthMethod("google")}
+                                className="w-full flex items-center justify-center gap-3 py-3 border border-slate-200 rounded-xl hover:bg-slate-50 transition-all font-semibold text-primary shadow-sm"
+                            >
+                                <Image src="https://www.gstatic.com/images/branding/product/1x/gsa_512dp.png" alt="Google" width={20} height={20} />
+                                Continue with Google
+                            </button>
+                        </div>
+                    )}
 
-                    <div className="relative">
-                        <div className="absolute inset-0 flex items-center">
-                            <span className="w-full border-t border-slate-100" />
+                    {!isAdminMode && (
+                        <div className="relative">
+                            <div className="absolute inset-0 flex items-center">
+                                <span className="w-full border-t border-slate-100" />
+                            </div>
+                            <div className="relative flex justify-center text-xs uppercase">
+                                <span className="bg-white px-4 text-slate-400 font-bold tracking-widest">Or login with</span>
+                            </div>
                         </div>
-                        <div className="relative flex justify-center text-xs uppercase">
-                            <span className="bg-white px-4 text-slate-400 font-bold tracking-widest">Or login with</span>
-                        </div>
-                    </div>
+                    )}
 
                     {/* Dynamic Login Form */}
                     <form className="space-y-5" onSubmit={handleLogin}>
@@ -141,35 +156,36 @@ export default function AuthPage() {
                                 {error}
                             </div>
                         )}
-                        <div className="flex gap-2">
-                            {/* ... (buttons remain the same, adding onClick prevention if needed but keeping them as buttons is fine) ... */}
-                            <button
-                                type="button"
-                                onClick={() => setAuthMethod("id")}
-                                className={cn(
-                                    "flex-1 py-2 rounded-lg text-xs font-bold uppercase tracking-wider transition-all",
-                                    authMethod === "id" ? "bg-primary text-white" : "bg-slate-50 text-slate-400"
-                                )}
-                            >
-                                School ID
-                            </button>
-                            <button
-                                type="button"
-                                onClick={() => setAuthMethod("phone")}
-                                className={cn(
-                                    "flex-1 py-2 rounded-lg text-xs font-bold uppercase tracking-wider transition-all",
-                                    authMethod === "phone" ? "bg-primary text-white" : "bg-slate-50 text-slate-400"
-                                )}
-                            >
-                                Phone OTP
-                            </button>
-                        </div>
+                        {!isAdminMode && (
+                            <div className="flex gap-2">
+                                <button
+                                    type="button"
+                                    onClick={() => setAuthMethod("id")}
+                                    className={cn(
+                                        "flex-1 py-2 rounded-lg text-xs font-bold uppercase tracking-wider transition-all",
+                                        authMethod === "id" ? "bg-primary text-white" : "bg-slate-50 text-slate-400"
+                                    )}
+                                >
+                                    School ID
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={() => setAuthMethod("phone")}
+                                    className={cn(
+                                        "flex-1 py-2 rounded-lg text-xs font-bold uppercase tracking-wider transition-all",
+                                        authMethod === "phone" ? "bg-primary text-white" : "bg-slate-50 text-slate-400"
+                                    )}
+                                >
+                                    Phone OTP
+                                </button>
+                            </div>
+                        )}
 
                         {authMethod === "id" && (
                             <div className="space-y-4">
                                 <InputGroup
                                     label="Email Address / ID"
-                                    placeholder="e.g. admin@skpsainik.edu.in"
+                                    placeholder={isAdminMode ? "admin@skpsainik.edu.in" : "e.g. rahul@student.edu.in"}
                                     icon={<Mail size={18} />}
                                     value={email}
                                     onChange={(e: any) => setEmail(e.target.value)}
@@ -202,11 +218,14 @@ export default function AuthPage() {
                     </form>
 
                     <p className="text-center text-sm text-slate-500">
-                        Don't have an ID? <Link href="/admission" className="text-gold-500 font-bold hover:underline">Apply for Admission</Link>
+                        {isAdminMode ? (
+                            <Link href="/login" className="text-slate-400 hover:text-primary transition-colors font-medium">Back to Student/Teacher Login</Link>
+                        ) : (
+                            <>Don't have an ID? <Link href="/admission" className="text-gold-500 font-bold hover:underline">Apply for Admission</Link></>
+                        )}
                     </p>
                 </div>
 
-                {/* Footer Credit */}
                 <div className="absolute bottom-6 left-1/2 -translate-x-1/2 text-[10px] text-slate-300 uppercase tracking-widest font-bold">
                     © 2026 SKP SAINIK PUBLIC SCHOOL
                 </div>
@@ -232,5 +251,13 @@ function InputGroup({ label, placeholder, type = "text", icon, value, onChange }
                 />
             </div>
         </div>
+    )
+}
+
+export default function AuthPage() {
+    return (
+        <Suspense fallback={<div className="min-h-screen flex items-center justify-center bg-white">Loading...</div>}>
+            <AuthContent />
+        </Suspense>
     )
 }

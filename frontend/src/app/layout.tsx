@@ -40,10 +40,11 @@ export default function RootLayout({
             <div>
               <h3 className="font-heading font-semibold text-gold-500 mb-4">Quick Links</h3>
               <ul className="flex flex-col gap-2 text-white/70">
-                <li><a href="/about">About Us</a></li>
-                <li><a href="/fees">Fees Structure</a></li>
-                <li><a href="/admission">Admissions</a></li>
-                <li><a href="/gallery">Gallery</a></li>
+                <li><a href="/about" className="hover:text-white transition-colors">About Us</a></li>
+                <li><a href="/fees" className="hover:text-white transition-colors">Fees Structure</a></li>
+                <li><a href="/admission" className="hover:text-white transition-colors">Admissions</a></li>
+                <li><a href="/gallery" className="hover:text-white transition-colors">Gallery</a></li>
+                <li className="mt-4"><a href="/login?role=admin" className="text-xs font-bold uppercase tracking-widest text-white/40 hover:text-gold-500 transition-all border border-white/10 px-3 py-2 rounded-lg inline-block">Admin Login</a></li>
               </ul>
             </div>
             <div>
