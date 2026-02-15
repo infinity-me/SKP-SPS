@@ -14,7 +14,10 @@ export const authService = {
 export const studentService = {
     getAll: () => api.get('/students'),
     getStudents: () => api.get('/students'),
-    getById: (id: number) => api.get(`/students?id=${id}`),
+    getById: (id: number) => api.get(`/students/${id}`),
+    create: (data: any) => api.post('/students', data),
+    update: (id: number, data: any) => api.put(`/students/${id}`, data),
+    delete: (id: number) => api.delete(`/students/${id}`),
 };
 
 export const attendanceService = {
@@ -29,16 +32,26 @@ export const resultService = {
 
 export const feeService = {
     getForStudent: (studentId: number) => api.get(`/fees?studentId=${studentId}`),
+    create: (data: any) => api.post('/fees', data),
 };
 
 export const circularService = {
     getAll: () => api.get('/circulars'),
     post: (data: any) => api.post('/circulars', data),
+    update: (id: number, data: any) => api.put(`/circulars/${id}`, data),
+    delete: (id: number) => api.delete(`/circulars/${id}`),
 };
 
 export const admissionService = {
     submit: (data: any) => api.post('/admission', data),
     getAdmissions: () => api.get('/admission'),
+    update: (id: number, data: any) => api.put(`/admission/${id}`, data),
+};
+
+export const photoService = {
+    getAll: () => api.get('/photos'),
+    upload: (data: any) => api.post('/photos', data),
+    delete: (id: number) => api.delete(`/photos/${id}`),
 };
 
 export default api;

@@ -199,16 +199,25 @@ export default function AdminDashboard() {
                                     </td>
                                     <td className="px-8 py-4 text-sm text-slate-500 font-medium">Class {row.class}</td>
                                     <td className="px-8 py-4 text-sm text-slate-500 font-medium">
-                                        {new Date(row.createdAt).toLocaleDateString()}
+                                        {new Date(row.id).toLocaleDateString()}
                                     </td>
                                     <td className="px-8 py-4">
-                                        <span className={cn(
-                                            "text-[10px] font-black px-2 py-1 rounded-md uppercase tracking-wider",
-                                            row.status === "Approved" ? "bg-green-50 text-green-600" :
-                                                row.status === "pending" ? "bg-orange-50 text-orange-600" : "bg-blue-50 text-blue-600"
-                                        )}>
-                                            {row.status}
-                                        </span>
+                                        <select
+                                            value={row.status}
+                                            onChange={async (e) => {
+                                                await admissionService.update(row.id, { status: e.target.value });
+                                                window.location.reload(); // Quick refresh for demo
+                                            }}
+                                            className={cn(
+                                                "text-[10px] font-black px-2 py-1 rounded-md uppercase tracking-wider border-none appearance-none cursor-pointer outline-none",
+                                                row.status === "Approved" ? "bg-green-50 text-green-600" :
+                                                    row.status === "Rejected" ? "bg-red-50 text-red-600" : "bg-orange-50 text-orange-600"
+                                            )}
+                                        >
+                                            <option value="pending">Pending</option>
+                                            <option value="Approved">Approved</option>
+                                            <option value="Rejected">Rejected</option>
+                                        </select>
                                     </td>
                                     <td className="px-8 py-4 text-right">
                                         <button className="text-slate-300 hover:text-primary transition-colors">

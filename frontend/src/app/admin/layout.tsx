@@ -1,28 +1,33 @@
-import AdminSidebar from "@/components/AdminSidebar";
+"use client"
+
+import AdminSidebar from "@/components/AdminSidebar"
+import { motion } from "framer-motion"
 
 export default function AdminLayout({
     children,
 }: {
-    children: React.ReactNode;
+    children: React.ReactNode
 }) {
     return (
-        <div className="flex bg-slate-50 min-h-screen">
+        <div className="min-h-screen bg-slate-50/50">
             <AdminSidebar />
-            <div className="flex-grow ml-64 min-h-screen">
-                <header className="h-16 bg-white border-b border-slate-100 flex items-center justify-between px-8 sticky top-0 z-30">
-                    <h2 className="font-heading font-bold text-slate-400 uppercase tracking-widest text-[10px]">Portal / Dashboard</h2>
+            <main className="pl-64 min-h-screen transition-all duration-300">
+                <header className="h-20 bg-white border-b border-slate-100 flex items-center justify-between px-8 sticky top-0 z-30">
                     <div className="flex items-center gap-4">
-                        <div className="flex flex-col items-end">
-                            <span className="text-sm font-bold text-primary">Administrator</span>
-                            <span className="text-[10px] text-green-500 font-bold uppercase">Online</span>
-                        </div>
-                        <div className="w-10 h-10 rounded-full bg-slate-200 border-2 border-white shadow-sm" />
+                        <div className="h-10 w-1 pt-1 bg-gold-500 rounded-full" />
+                        <h2 className="font-heading font-bold text-primary">Control Center</h2>
                     </div>
                 </header>
-                <main className="p-8">
-                    {children}
-                </main>
-            </div>
+                <div className="p-8">
+                    <motion.div
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.4 }}
+                    >
+                        {children}
+                    </motion.div>
+                </div>
+            </main>
         </div>
-    );
+    )
 }

@@ -36,6 +36,21 @@ app.get('/api/students', (req, res) => {
     res.json({ success: true, data: db.students.findMany() });
 });
 
+app.post('/api/students', async (req, res) => {
+    const student = await db.students.create(req.body);
+    res.json({ success: true, data: student });
+});
+
+app.put('/api/students/:id', async (req, res) => {
+    const student = await db.students.update(req.params.id, req.body);
+    res.json({ success: true, data: student });
+});
+
+app.delete('/api/students/:id', async (req, res) => {
+    await db.students.delete(req.params.id);
+    res.json({ success: true, message: "Student deleted" });
+});
+
 // Fee Routes
 app.get('/api/fees', (req, res) => {
     const { studentId } = req.query;
@@ -44,6 +59,11 @@ app.get('/api/fees', (req, res) => {
         fees = fees.filter(f => f.studentId === parseInt(studentId));
     }
     res.json({ success: true, data: fees });
+});
+
+app.post('/api/fees', async (req, res) => {
+    const fee = await db.fees.create(req.body);
+    res.json({ success: true, data: fee });
 });
 
 // Circular Routes
@@ -56,7 +76,21 @@ app.post('/api/circulars', async (req, res) => {
     res.json({ success: true, message: "Circular posted", data: circular });
 });
 
+app.put('/api/circulars/:id', async (req, res) => {
+    const circular = await db.circulars.update(req.params.id, req.body);
+    res.json({ success: true, data: circular });
+});
+
+app.delete('/api/circulars/:id', async (req, res) => {
+    await db.circulars.delete(req.params.id);
+    res.json({ success: true, message: "Circular deleted" });
+});
+
 // Admission Routes
+app.get('/api/admission', (req, res) => {
+    res.json({ success: true, data: db.admissions.findMany() });
+});
+
 app.post('/api/admission', async (req, res) => {
     const submission = await db.admissions.create({ ...req.body, status: "pending" });
     res.json({
@@ -66,8 +100,24 @@ app.post('/api/admission', async (req, res) => {
     });
 });
 
-app.get('/api/admission', (req, res) => {
-    res.json({ success: true, data: db.admissions.findMany() });
+app.put('/api/admission/:id', async (req, res) => {
+    const admission = await db.admissions.update(req.params.id, req.body);
+    res.json({ success: true, data: admission });
+});
+
+// Photo/Gallery Routes
+app.get('/api/photos', (req, res) => {
+    res.json({ success: true, data: db.photos.findMany() });
+});
+
+app.post('/api/photos', async (req, res) => {
+    const photo = await db.photos.create(req.body);
+    res.json({ success: true, data: photo });
+});
+
+app.delete('/api/photos/:id', async (req, res) => {
+    await db.photos.delete(req.params.id);
+    res.json({ success: true, message: "Photo deleted" });
 });
 
 // Init/Seed Route
@@ -79,8 +129,8 @@ app.get('/api/init', async (req, res) => {
     const teacher = await db.users.create({ name: "Abhishek Maurya", email: "abhishek@skpsainik.edu.in", password: "password123", role: "teacher" });
     const studentUser = await db.users.create({ name: "Rahul Sharma", email: "rahul@student.edu.in", password: "password123", role: "student", schoolId: "SPS2026001" });
 
-    await db.students.create({ userId: studentUser.id, admissionNo: "SPS2026001", class: "9th", section: "A", parentName: "Mr. Sharma" });
-    await db.circulars.create({ title: "Annual Sports Meet 2026", category: "Sports", description: "The annual sports meet will be held on Feb 25th." });
+    await db.students.create({ userId: studentUser.id, admissionNo: "SPS2026001", firstName: "Rahul", lastName: "Sharma", class: "9th", section: "A", parentName: "Mr. Sharma" });
+    await db.circulars.create({ title: "Annual Sports Meet 2026", category: "Sports", description: "The annual sports meet will be held on Feb 25th.", date: new Date().toISOString() });
 
     res.json({ success: true, message: "System initialized and seeded." });
 });

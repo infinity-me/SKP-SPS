@@ -66,4 +66,5 @@ module.exports = {
     attendance: new JsonDB('attendance'),
     results: new JsonDB('results'),
     admissions: new JsonDB('admissions'),
+    photos: new JsonDB('photos'),
 };
