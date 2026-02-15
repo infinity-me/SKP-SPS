@@ -43,7 +43,7 @@ export default function AboutPage() {
                             <h2 className="text-3xl md:text-4xl font-heading font-bold text-primary mt-2">Nurturing Character & Competence.</h2>
                         </div>
                         <p className="text-muted-foreground leading-relaxed text-lg">
-                            Founded in 2005, SKP school has consistently pushed the boundaries of traditional education. We combine rigorous academic standards with the discipline of a Sainik institution, ensuring our students are prepared for the challenges of the modern world while remaining rooted in core values.
+                            Founded in 2009, SKP school has consistently pushed the boundaries of traditional education. We combine rigorous academic standards with the discipline of a Sainik institution, ensuring our students are prepared for the challenges of the modern world while remaining rooted in core values.
                         </p>
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                             <FeatureItem icon={<Shield />} title="Discipline" desc="Integrated military-style values." />
@@ -64,7 +64,7 @@ export default function AboutPage() {
                             <div className="w-24 h-24 rounded-full bg-primary shrink-0" />
                             <div>
                                 <Star className="text-gold-500 mb-4" />
-                                <h3 className="text-xl font-bold text-primary mb-1">Dr. S. K. Singh</h3>
+                                <h3 className="text-xl font-bold text-primary mb-1">Shri Satyadev Kushwaha</h3>
                                 <p className="text-gold-500 font-bold text-sm uppercase mb-4">Chairman</p>
                                 <p className="text-muted-foreground text-sm italic leading-relaxed">
                                     "Education is the most powerful weapon which you can use to change the world. At SKP, we forge that weapon with discipline."
@@ -75,7 +75,7 @@ export default function AboutPage() {
                             <div className="w-24 h-24 rounded-full bg-primary shrink-0" />
                             <div>
                                 <UserCheck className="text-gold-500 mb-4" />
-                                <h3 className="text-xl font-bold text-primary mb-1">Mrs. Neeta Singh</h3>
+                                <h3 className="text-xl font-bold text-primary mb-1">Mrs. Shobha Sharma</h3>
                                 <p className="text-gold-500 font-bold text-sm uppercase mb-4">Principal</p>
                                 <p className="text-muted-foreground text-sm italic leading-relaxed">
                                     "Our focus is not just on producing graduates, but on producing responsible citizens with a strong moral compass."

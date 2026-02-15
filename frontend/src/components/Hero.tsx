@@ -33,7 +33,7 @@ export default function Hero() {
                         transition={{ duration: 0.8 }}
                     >
                         <span className="px-4 py-1.5 rounded-full bg-gold-500/10 text-gold-500 text-xs font-bold tracking-widest uppercase border border-gold-500/20 mb-6 inline-block">
-                            Nurturing Excellence Since 2005
+                            Nurturing Excellence Since 2009
                         </span>
                         <h1 className="text-4xl md:text-6xl lg:text-7xl font-bold text-white mb-6 leading-[1.1]">
                             Shaping Minds, <br />
@@ -68,9 +68,9 @@ export default function Hero() {
                         className="grid grid-cols-3 gap-8 mt-16 pt-8 border-t border-white/10"
                     >
                         {[
-                            { label: "Students", value: "1200+", icon: <BookOpen className="text-gold-500" /> },
-                            { label: "Faculty", value: "85+", icon: <Award className="text-gold-500" /> },
-                            { label: "Labs", value: "12+", icon: <Calculator className="text-gold-500" /> },
+                            { label: "Students", value: "600+", icon: <BookOpen className="text-gold-500" /> },
+                            { label: "Faculty", value: "25+", icon: <Award className="text-gold-500" /> },
+                            { label: "Labs", value: "5+", icon: <Calculator className="text-gold-500" /> },
                         ].map((stat, i) => (
                             <div key={i} className="flex flex-col gap-1">
                                 <div className="flex items-center gap-2 text-white font-bold text-xl md:text-2xl">
