@@ -54,4 +54,17 @@ export const photoService = {
     delete: (id: number) => api.delete(`/photos/${id}`),
 };
 
+export const stationeryService = {
+    getAll: () => api.get('/stationery'),
+    create: (data: any) => api.post('/stationery', data),
+    update: (id: number, data: any) => api.put(`/stationery/${id}`, data),
+    delete: (id: number) => api.delete(`/stationery/${id}`),
+};
+
+export const orderService = {
+    getAll: () => api.get('/orders'),
+    create: (data: any) => api.post('/orders', data),
+    update: (id: number, data: any) => api.put(`/orders/${id}`, data),
+};
+
 export default api;

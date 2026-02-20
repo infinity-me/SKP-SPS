@@ -120,6 +120,41 @@ app.delete('/api/photos/:id', async (req, res) => {
     res.json({ success: true, message: "Photo deleted" });
 });
 
+// Stationery Store Routes
+app.get('/api/stationery', (req, res) => {
+    res.json({ success: true, data: db.stationery.findMany() });
+});
+
+app.post('/api/stationery', async (req, res) => {
+    const item = await db.stationery.create(req.body);
+    res.json({ success: true, data: item });
+});
+
+app.put('/api/stationery/:id', async (req, res) => {
+    const item = await db.stationery.update(req.params.id, req.body);
+    res.json({ success: true, data: item });
+});
+
+app.delete('/api/stationery/:id', async (req, res) => {
+    await db.stationery.delete(req.params.id);
+    res.json({ success: true, message: "Item deleted" });
+});
+
+// Order Routes
+app.get('/api/orders', (req, res) => {
+    res.json({ success: true, data: db.orders.findMany() });
+});
+
+app.post('/api/orders', async (req, res) => {
+    const order = await db.orders.create({ ...req.body, status: "pending", createdAt: new Date().toISOString() });
+    res.json({ success: true, message: "Order placed successfully", data: order });
+});
+
+app.put('/api/orders/:id', async (req, res) => {
+    const order = await db.orders.update(req.params.id, req.body);
+    res.json({ success: true, data: order });
+});
+
 // Init/Seed Route
 app.get('/api/init', async (req, res) => {
     const users = db.users.findMany();
@@ -131,6 +166,11 @@ app.get('/api/init', async (req, res) => {
 
     await db.students.create({ userId: studentUser.id, admissionNo: "SPS2026001", firstName: "Rahul", lastName: "Sharma", class: "9th", section: "A", parentName: "Mr. Sharma" });
     await db.circulars.create({ title: "Annual Sports Meet 2026", category: "Sports", description: "The annual sports meet will be held on Feb 25th.", date: new Date().toISOString() });
+
+    // Seed Stationery
+    await db.stationery.create({ name: "School Diary 2026", category: "Books", price: 150, stock: 500, description: "Official SKP Sainik School diary for assignments and notes.", image: "https://images.unsplash.com/photo-1544816155-12df9643f363?q=80&w=400&auto=format&fit=crop" });
+    await db.stationery.create({ name: "Biology Lab Coat", category: "Uniform", price: 450, stock: 100, description: "Standard white lab coat for senior science students.", image: "https://images.unsplash.com/photo-1576086213369-97a306d36557?q=80&w=400&auto=format&fit=crop" });
+    await db.stationery.create({ name: "Geometry Box set", category: "Stationery", price: 120, stock: 200, description: "Complete set with compass, divider, and rulers.", image: "https://images.unsplash.com/photo-1583484963886-cfe2bef37f52?q=80&w=400&auto=format&fit=crop" });
 
     res.json({ success: true, message: "System initialized and seeded." });
 });

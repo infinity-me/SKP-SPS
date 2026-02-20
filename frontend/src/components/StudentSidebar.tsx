@@ -12,6 +12,7 @@ import {
     BookOpen,
     Bell,
     ShoppingCart,
+    ShoppingBag,
     LogOut
 } from "lucide-react"
 
@@ -28,6 +29,7 @@ const studentMenuItems = [
         group: "Financial", items: [
             { name: "Pay Fees", href: "/student/fees", icon: <CreditCard size={18} /> },
             { name: "Receipts", href: "/student/receipts", icon: <ShoppingCart size={18} /> },
+            { name: "Stationery Store", href: "/student/stationery", icon: <ShoppingBag size={18} /> },
         ]
     },
     {
