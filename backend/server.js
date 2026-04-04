@@ -13,6 +13,9 @@ const PORT = 5000;
 app.use(cors());
 app.use(express.json());
 
+const { OAuth2Client } = require('google-auth-library');
+const googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
+
 /* =========================
    🔐 AUTH ROUTES
 ========================= */
@@ -26,8 +29,8 @@ app.post('/api/auth/login', async (req, res) => {
             where: { email }
         });
 
-        if (!user) {
-            return res.status(400).json({ success: false, message: "User not found" });
+        if (!user || !user.password) {
+            return res.status(400).json({ success: false, message: "User not found or using Google login" });
         }
 
         const isMatch = await bcrypt.compare(password, user.password);
@@ -48,6 +51,126 @@ app.post('/api/auth/login', async (req, res) => {
             user
         });
 
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// GOOGLE AUTH
+app.post('/api/auth/google', async (req, res) => {
+    try {
+        const { idToken, role = "guest" } = req.body;
+        
+        // In a real app, verify the token with googleClient.verifyIdToken
+        // For development/demo purposes without a client ID, we'll simulate verification
+        // if no client ID is provided in .env
+        let payload;
+        if (process.env.GOOGLE_CLIENT_ID) {
+            const ticket = await googleClient.verifyIdToken({
+                idToken,
+                audience: process.env.GOOGLE_CLIENT_ID,
+            });
+            payload = ticket.getPayload();
+        } else {
+            // Simulation for demo
+            payload = {
+                email: "guest_demo@gmail.com",
+                name: "Guest User",
+                sub: "google123456"
+            };
+        }
+
+        const { email, name, sub: googleId } = payload;
+
+        let user = await prisma.user.findUnique({
+            where: { email }
+        });
+
+        if (user) {
+            // Link google ID if not linked
+            if (!user.googleId) {
+                user = await prisma.user.update({
+                    where: { id: user.id },
+                    data: { googleId }
+                });
+            }
+        } else {
+            // Create guest user
+            user = await prisma.user.create({
+                data: {
+                    email,
+                    name,
+                    googleId,
+                    role: "guest",
+                    isVerified: true
+                }
+            });
+        }
+
+        const token = jwt.sign(
+            { userId: user.id, role: user.role },
+            process.env.JWT_SECRET,
+            { expiresIn: '7d' }
+        );
+
+        res.json({ success: true, token, user });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// REGISTER GUEST
+app.post('/api/auth/register-guest', async (req, res) => {
+    try {
+        const { name, email, password } = req.body;
+        const hashedPassword = await bcrypt.hash(password, 10);
+
+        const user = await prisma.user.create({
+            data: {
+                name,
+                email,
+                password: hashedPassword,
+                role: "guest",
+                isVerified: true
+            }
+        });
+
+        const token = jwt.sign(
+            { userId: user.id, role: user.role },
+            process.env.JWT_SECRET,
+            { expiresIn: '7d' }
+        );
+
+        res.json({ success: true, token, user });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// VERIFY SCHOOL ID (Check existence for student/teacher)
+app.get('/api/auth/verify-id', async (req, res) => {
+    try {
+        const { role, id } = req.query;
+
+        if (role === 'student') {
+            const student = await prisma.student.findUnique({
+                where: { admissionNo: id },
+                include: { user: true }
+            });
+            if (student) {
+                return res.json({ success: true, exists: true, email: student.user.email });
+            }
+        } else if (role === 'teacher') {
+            const teacher = await prisma.teacher.findUnique({
+                where: { staffId: id },
+                include: { user: true }
+            });
+            if (teacher) {
+                return res.json({ success: true, exists: true, email: teacher.user.email });
+            }
+        }
+
+        res.json({ success: false, message: "ID not found in school records" });
     } catch (err) {
         res.status(500).json({ error: err.message });
     }
@@ -149,6 +272,53 @@ app.post('/api/teachers', auth, async (req, res) => {
     res.json({ success: true, data: teacher });
 });
 
+
+/* =========================
+   👩‍🏫 TEACHER APPLICATIONS
+========================= */
+
+app.get('/api/teacher-application', auth, async (req, res) => {
+    try {
+        const applications = await prisma.teacherApplication.findMany({
+            orderBy: { createdAt: 'desc' }
+        });
+        res.json({ success: true, data: applications });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+app.post('/api/teacher-application', async (req, res) => {
+    try {
+        const application = await prisma.teacherApplication.create({
+            data: {
+                ...req.body,
+                status: "pending"
+            }
+        });
+        res.json({ 
+            success: true, 
+            message: "Application submitted successfully!", 
+            data: application 
+        });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+app.put('/api/teacher-application/:id', auth, async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { status } = req.body;
+        const updated = await prisma.teacherApplication.update({
+            where: { id: parseInt(id) },
+            data: { status }
+        });
+        res.json({ success: true, data: updated });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
 
 /* =========================
    💰 FEES
@@ -343,6 +513,69 @@ app.get('/api/init', async (req, res) => {
     });
 
     res.json({ success: true, message: "Seeded successfully", admin });
+});
+
+
+/* =========================
+   📢 NOTICES
+========================= */
+
+// Public: get all active notices
+app.get('/api/notices', async (req, res) => {
+    try {
+        const notices = await prisma.notice.findMany({
+            where: { isActive: true },
+            orderBy: { createdAt: 'desc' }
+        });
+        res.json({ success: true, data: notices });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// Admin: get ALL notices (including inactive)
+app.get('/api/notices/all', auth, async (req, res) => {
+    try {
+        const notices = await prisma.notice.findMany({
+            orderBy: { createdAt: 'desc' }
+        });
+        res.json({ success: true, data: notices });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// Admin: create a notice
+app.post('/api/notices', auth, async (req, res) => {
+    try {
+        const notice = await prisma.notice.create({ data: req.body });
+        res.json({ success: true, data: notice });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// Admin: toggle active / update
+app.put('/api/notices/:id', auth, async (req, res) => {
+    try {
+        const updated = await prisma.notice.update({
+            where: { id: parseInt(req.params.id) },
+            data: req.body
+        });
+        res.json({ success: true, data: updated });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// Admin: delete a notice
+app.delete('/api/notices/:id', auth, async (req, res) => {
+    try {
+        await prisma.notice.delete({ where: { id: parseInt(req.params.id) } });
+        res.json({ success: true, message: 'Deleted' });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
 });
 
 

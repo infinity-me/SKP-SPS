@@ -13,10 +13,11 @@ function AuthContent() {
     const searchParams = useSearchParams()
     const isAdminMode = searchParams.get('role') === 'admin'
 
-    const [role, setRole] = useState<"student" | "teacher" | "admin">(isAdminMode ? "admin" : "student")
+    const [role, setRole] = useState<"student" | "teacher" | "admin" | "guest">(isAdminMode ? "admin" : "student")
     const [authMethod, setAuthMethod] = useState<"id" | "phone" | "google">("id")
     const [email, setEmail] = useState("")
     const [password, setPassword] = useState("")
+    const [schoolId, setSchoolId] = useState("")
     const [isLoading, setIsLoading] = useState(false)
     const [error, setError] = useState("")
     const router = useRouter()
@@ -35,7 +36,18 @@ function AuthContent() {
         setError("")
 
         try {
-            const response = await authService.login({ email, password, role })
+            let response;
+            if (role === 'guest') {
+                response = await authService.login({ email, password, role })
+            } else if (role === 'admin') {
+                response = await authService.login({ email, password, role })
+            } else {
+                // For Student/Teacher, they can use email or schoolId
+                // For now, let's assume they use email/password if they have it
+                // Or we can add a verification step
+                response = await authService.login({ email, password, role })
+            }
+
             if (response.success) {
                 localStorage.setItem('user', JSON.stringify(response.user))
                 router.push(`/${role}`)
@@ -49,7 +61,23 @@ function AuthContent() {
         }
     }
 
-    const availableRoles = isAdminMode ? ["admin"] : ["student", "teacher"]
+    const handleGoogleLogin = async () => {
+        setIsLoading(true)
+        try {
+            // In a real app, use @react-oauth/google to get idToken
+            // For demo, we'll simulate the call to our backend
+            const response = await authService.googleLogin("mock-token", role)
+            if (response.success) {
+                router.push(`/${response.user.role}`)
+            }
+        } catch (err) {
+            setError("Google login failed")
+        } finally {
+            setIsLoading(false)
+        }
+    }
+
+    const availableRoles = isAdminMode ? ["admin"] : ["student", "teacher", "guest"]
 
     return (
         <div className="min-h-screen flex flex-col md:flex-row bg-white overflow-hidden">
@@ -129,11 +157,11 @@ function AuthContent() {
                     {!isAdminMode && (
                         <div className="space-y-3">
                             <button
-                                onClick={() => setAuthMethod("google")}
+                                onClick={handleGoogleLogin}
                                 className="w-full flex items-center justify-center gap-3 py-3 border border-slate-200 rounded-xl hover:bg-slate-50 transition-all font-semibold text-primary shadow-sm"
                             >
                                 <Image src="https://www.gstatic.com/images/branding/product/1x/gsa_512dp.png" alt="Google" width={20} height={20} />
-                                Continue with Google
+                                Continue with {role === 'guest' ? "Guest " : ""}Google
                             </button>
                         </div>
                     )}
@@ -220,8 +248,13 @@ function AuthContent() {
                     <p className="text-center text-sm text-slate-500">
                         {isAdminMode ? (
                             <Link href="/login" className="text-slate-400 hover:text-primary transition-colors font-medium">Back to Student/Teacher Login</Link>
+                        ) : role === 'guest' ? (
+                            <>New explorer? <Link href="/signup" className="text-gold-500 font-bold hover:underline">Create a Guest Account</Link></>
                         ) : (
-                            <>Don't have an ID? <Link href="/admission" className="text-gold-500 font-bold hover:underline">Apply for Admission</Link></>
+                            <div className="space-y-4">
+                                <p>Don't have an ID? <Link href="/admission" className="text-gold-500 font-bold hover:underline">Apply for Admission</Link></p>
+                                <p className="text-xs">Professional educator? <Link href="/apply-teacher" className="text-primary font-bold hover:underline">Apply as a Teacher</Link></p>
+                            </div>
                         )}
                     </p>
                 </div>

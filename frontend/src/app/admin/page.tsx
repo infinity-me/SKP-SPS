@@ -3,15 +3,18 @@
 import { useState, useEffect } from "react"
 import { motion } from "framer-motion"
 import { cn } from "@/lib/utils"
-import { admissionService, studentService } from "@/lib/api"
+import Link from "next/link"
+import { admissionService, studentService, teacherApplicationService, noticeService } from "@/lib/api"
 import {
     Users,
     UserCheck,
+    UserPlus,
     BadgeIndianRupee,
     TrendingUp,
     MoreHorizontal,
     ArrowUpRight,
-    ArrowDownRight
+    ArrowDownRight,
+    Bell
 } from "lucide-react"
 import {
     BarChart,
@@ -45,17 +48,20 @@ const chartData = [
 export default function AdminDashboard() {
     const [admissions, setAdmissions] = useState([])
     const [students, setStudents] = useState([])
+    const [teacherApps, setTeacherApps] = useState([])
     const [isLoading, setIsLoading] = useState(true)
 
     useEffect(() => {
         const fetchData = async () => {
             try {
-                const [admRes, stuRes] = await Promise.all([
+                const [admRes, stuRes, teaRes] = await Promise.all([
                     admissionService.getAdmissions(),
-                    studentService.getAll()
+                    studentService.getAll(),
+                    teacherApplicationService.getAll()
                 ])
                 setAdmissions(admRes.data.data)
                 setStudents(stuRes.data.data)
+                setTeacherApps(teaRes.data.data)
             } catch (error) {
                 console.error("Failed to fetch dashboard data")
             } finally {
@@ -64,6 +70,7 @@ export default function AdminDashboard() {
         }
         fetchData()
     }, [])
+
     return (
         <div className="space-y-8 pb-12">
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
@@ -72,7 +79,10 @@ export default function AdminDashboard() {
                     <p className="text-muted-foreground text-sm">Welcome back. Here's what's happening today.</p>
                 </div>
                 <div className="flex gap-3">
-                    <button className="px-4 py-2 border border-slate-200 rounded-xl text-sm font-bold text-slate-600 hover:bg-slate-50 transition-all">Export Report</button>
+                    <Link href="/admin/notices" className="flex items-center gap-2 px-4 py-2 border border-slate-200 rounded-xl text-sm font-bold text-slate-600 hover:bg-slate-50 transition-all decoration-transparent">
+                        <Bell size={14} />
+                        Notices
+                    </Link>
                     <button className="px-4 py-2 bg-primary text-white rounded-xl text-sm font-bold hover:bg-navy-800 transition-all shadow-lg shadow-primary/10">Add Student</button>
                 </div>
             </div>
@@ -82,8 +92,8 @@ export default function AdminDashboard() {
                 {[
                     { label: "Total Students", value: students.length.toString(), change: "+12%", trendingUp: true, icon: <Users className="text-blue-500" /> },
                     { label: "Active Teachers", value: "86", change: "+2", trendingUp: true, icon: <UserCheck className="text-green-500" /> },
-                    { label: "Admissions (New)", value: admissions.length.toString(), change: "+18%", trendingUp: true, icon: <BadgeIndianRupee className="text-gold-500" /> },
-                    { label: "Pending Fees", value: "₹2.1L", change: "-5%", trendingUp: false, icon: <TrendingUp className="text-red-500" /> },
+                    { label: "Admission Queries", value: admissions.length.toString(), change: "+18%", trendingUp: true, icon: <BadgeIndianRupee className="text-gold-500" /> },
+                    { label: "Teacher Apps", value: teacherApps.length.toString(), change: "+5", trendingUp: true, icon: <UserPlus className="text-indigo-500" /> },
                 ].map((stat, i) => (
                     <motion.div
                         key={stat.label}
@@ -153,22 +163,22 @@ export default function AdminDashboard() {
 
                 <div className="bg-primary p-8 rounded-3xl shadow-xl shadow-primary/20 relative overflow-hidden flex flex-col justify-between">
                     <div className="relative z-10">
-                        <BadgeIndianRupee className="text-gold-500 mb-6" size={48} />
+                        <UserPlus className="text-gold-500 mb-6" size={48} />
                         <h3 className="text-2xl font-heading font-black text-white leading-tight mb-4">
-                            Total Outstanding <br /> <span className="text-gold-500">Inventory Value</span>
+                            Faculty <br /> <span className="text-gold-500">Recruitment</span>
                         </h3>
                         <p className="text-white/50 text-sm leading-relaxed mb-8">
-                            Stocks for uniforms and stationery are currently at 85% capacity.
+                            There are {teacherApps.length} new applications waiting for review.
                         </p>
                     </div>
-                    <button className="relative z-10 w-full py-4 bg-gold-500 text-primary rounded-2xl font-bold hover:bg-gold-400 transition-all flex items-center justify-center gap-2">
-                        Manage Store <ArrowUpRight size={18} />
-                    </button>
+                    <Link href="/admin/teachers/applications" className="relative z-10 w-full py-4 bg-gold-500 text-primary rounded-2xl font-bold hover:bg-gold-400 transition-all flex items-center justify-center gap-2 text-center decoration-transparent">
+                        View Applications <ArrowUpRight size={18} />
+                    </Link>
 
                     {/* Decorative pattern */}
                     <div className="absolute -bottom-10 -right-10 w-48 h-48 bg-white/5 rounded-full blur-3xl -z-0" />
                     <div className="absolute top-0 right-0 p-8 text-white/5">
-                        <TrendingUp size={120} />
+                        <UserPlus size={120} />
                     </div>
                 </div>
             </div>
@@ -177,7 +187,7 @@ export default function AdminDashboard() {
             <div className="bg-white rounded-3xl border border-slate-100 shadow-sm overflow-hidden">
                 <div className="p-8 border-b border-slate-50 flex items-center justify-between">
                     <h3 className="font-heading font-bold text-primary">Recent Admissions</h3>
-                    <button className="text-xs font-bold text-gold-500 hover:text-gold-400 uppercase tracking-widest">View All</button>
+                    <Link href="/admin/admission" className="text-xs font-bold text-gold-500 hover:text-gold-400 uppercase tracking-widest decoration-transparent">View All</Link>
                 </div>
                 <div className="overflow-x-auto">
                     <table className="w-full text-left">

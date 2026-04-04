@@ -10,6 +10,7 @@ import {
     CreditCard,
     Settings,
     Bell,
+    Megaphone,
     Image as ImageIcon,
     FileText,
     ShoppingCart,
@@ -34,6 +35,7 @@ const menuItems = [
     {
         group: "Content CMS", items: [
             { name: "Circulars", href: "/admin/circulars", icon: <Bell size={18} /> },
+            { name: "Notices", href: "/admin/notices", icon: <Megaphone size={18} /> },
             { name: "Gallery", href: "/admin/gallery", icon: <ImageIcon size={18} /> },
             { name: "Products & Store", href: "/admin/store", icon: <ShoppingCart size={18} /> },
             { name: "Pages", href: "/admin/pages", icon: <FileText size={18} /> },

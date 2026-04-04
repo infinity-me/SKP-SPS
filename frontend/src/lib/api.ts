@@ -38,13 +38,30 @@ api.interceptors.response.use(
 export const authService = {
     login: async (credentials: any) => {
         const res = await api.post('/auth/login', credentials);
-
-        // save token automatically
         if (res.data?.token) {
             localStorage.setItem("token", res.data.token);
             localStorage.setItem("user", JSON.stringify(res.data.user));
         }
-
+        return res.data;
+    },
+    googleLogin: async (idToken: string, role: string = "guest") => {
+        const res = await api.post('/auth/google', { idToken, role });
+        if (res.data?.token) {
+            localStorage.setItem("token", res.data.token);
+            localStorage.setItem("user", JSON.stringify(res.data.user));
+        }
+        return res.data;
+    },
+    registerGuest: async (data: any) => {
+        const res = await api.post('/auth/register-guest', data);
+        if (res.data?.token) {
+            localStorage.setItem("token", res.data.token);
+            localStorage.setItem("user", JSON.stringify(res.data.user));
+        }
+        return res.data;
+    },
+    verifySchoolId: async (role: string, id: string) => {
+        const res = await api.get(`/auth/verify-id?role=${role}&id=${id}`);
         return res.data;
     },
 };
@@ -145,6 +162,26 @@ export const orderService = {
 
 export const analyticsService = {
     getStats: () => api.get('/analytics'),
+};
+
+
+/* ================= TEACHER APPLICATIONS ================= */
+
+export const teacherApplicationService = {
+    submit: (data: any) => api.post('/teacher-application', data),
+    getAll: () => api.get('/teacher-application'),
+    update: (id: number, data: any) => api.put(`/teacher-application/${id}`, data),
+};
+
+
+/* ================= NOTICES ================= */
+
+export const noticeService = {
+    getActive: () => api.get('/notices'),
+    getAll: () => api.get('/notices/all'),
+    create: (data: any) => api.post('/notices', data),
+    update: (id: number, data: any) => api.put(`/notices/${id}`, data),
+    remove: (id: number) => api.delete(`/notices/${id}`),
 };
 
 

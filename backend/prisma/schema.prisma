@@ -12,8 +12,10 @@ model User {
   name      String
   email     String   @unique
   phone     String?  @unique
-  password  String
-  role      String   // admin, teacher, student
+  password  String?  // Made optional for Google users
+  role      String   // admin, teacher, student, guest
+  googleId  String?  @unique
+  isVerified Boolean @default(false)
   schoolId  String?  @unique
   createdAt DateTime @default(now())
   
@@ -94,4 +96,25 @@ model Admission {
   previousSchool String?
   status       String   @default("pending") // pending, reviewed, accepted
   createdAt    DateTime @default(now())
+}
+
+model TeacherApplication {
+  id            Int      @id @default(autoincrement())
+  fullName      String
+  email         String
+  phone         String
+  subject       String
+  qualification String
+  experience    String   // e.g., "5 years"
+  resumeUrl     String   // URL to the resume (Drive link, etc.)
+  status        String   @default("pending") // pending, reviewed, shortlisted, rejected
+  createdAt     DateTime @default(now())
+}
+
+model Notice {
+  id        Int      @id @default(autoincrement())
+  message   String
+  type      String   @default("info") // info, warning, success, urgent
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
 }
