@@ -36,11 +36,11 @@ function AuthContent() {
 
         try {
             const response = await authService.login({ email, password, role })
-            if (response.data.success) {
-                localStorage.setItem('user', JSON.stringify(response.data.user))
+            if (response.success) {
+                localStorage.setItem('user', JSON.stringify(response.user))
                 router.push(`/${role}`)
             } else {
-                setError(response.data.message || "Invalid credentials")
+                setError(response.message || "Invalid credentials")
             }
         } catch (err: any) {
             setError(err.response?.data?.message || "An error occurred during login")

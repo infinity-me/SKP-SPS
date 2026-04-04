@@ -77,7 +77,7 @@ export default function StudentsPage() {
     }
 
     const filteredStudents = students.filter(s =>
-        `${s.firstName} ${s.lastName}`.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        (s.user?.name || "").toLowerCase().includes(searchQuery.toLowerCase()) ||
         s.admissionNo.toLowerCase().includes(searchQuery.toLowerCase())
     )
 
@@ -130,11 +130,11 @@ export default function StudentsPage() {
                                     <td className="px-8 py-4">
                                         <div className="flex items-center gap-3">
                                             <div className="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center font-bold text-slate-400">
-                                                {student.firstName[0]}{student.lastName[0]}
+                                                {student.user?.name ? student.user.name[0] : "?"}
                                             </div>
                                             <div>
-                                                <p className="text-sm font-bold">{student.firstName} {student.lastName}</p>
-                                                <p className="text-[10px] text-slate-400 font-medium">Joined {new Date(student.id).toLocaleDateString()}</p>
+                                                <p className="text-sm font-bold">{student.user?.name || "Unknown Student"}</p>
+                                                <p className="text-[10px] text-slate-400 font-medium">Joined {new Date(student.user?.createdAt || Date.now()).toLocaleDateString()}</p>
                                             </div>
                                         </div>
                                     </td>
@@ -252,8 +252,7 @@ export default function StudentsPage() {
                                         required
                                         className="w-full px-4 py-3 bg-slate-50 border-none rounded-2xl text-sm focus:ring-2 focus:ring-primary/10 transition-all text-primary"
                                         value={formData.parentName}
-                                        onChange={setFormData.bind(null, { ...formData })} // Placeholder fix below
-                                        onInput={(e: any) => setFormData({ ...formData, parentName: e.target.value })}
+                                        onChange={e => setFormData({ ...formData, parentName: e.target.value })}
                                     />
                                 </div>
                                 <div className="space-y-2">
@@ -262,7 +261,7 @@ export default function StudentsPage() {
                                         required
                                         className="w-full px-4 py-3 bg-slate-50 border-none rounded-2xl text-sm focus:ring-2 focus:ring-primary/10 transition-all text-primary"
                                         value={formData.phone}
-                                        onInput={(e: any) => setFormData({ ...formData, phone: e.target.value })}
+                                        onChange={e => setFormData({ ...formData, phone: e.target.value })}
                                     />
                                 </div>
                             </div>

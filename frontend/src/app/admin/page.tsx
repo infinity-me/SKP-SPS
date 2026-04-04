@@ -52,7 +52,7 @@ export default function AdminDashboard() {
             try {
                 const [admRes, stuRes] = await Promise.all([
                     admissionService.getAdmissions(),
-                    studentService.getStudents()
+                    studentService.getAll()
                 ])
                 setAdmissions(admRes.data.data)
                 setStudents(stuRes.data.data)

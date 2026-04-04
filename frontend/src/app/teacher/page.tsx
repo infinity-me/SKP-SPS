@@ -50,7 +50,7 @@ export default function TeacherDashboard() {
     useEffect(() => {
         const fetchData = async () => {
             try {
-                const res = await studentService.getStudents()
+                const res = await studentService.getAll()
                 setStudents(res.data.data)
             } catch (error) {
                 console.error("Failed to fetch teacher data")

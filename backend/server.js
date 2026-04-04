@@ -1,180 +1,355 @@
+require('dotenv').config();
+
 const express = require('express');
 const cors = require('cors');
-const bodyParser = require('body-parser');
-const db = require('./db');
+const bcrypt = require('bcryptjs');
+const jwt = require('jsonwebtoken');
+
+const prisma = require('./db');
 
 const app = express();
 const PORT = 5000;
 
 app.use(cors());
-app.use(bodyParser.json());
+app.use(express.json());
 
-// Auth Routes
+/* =========================
+   🔐 AUTH ROUTES
+========================= */
+
+// LOGIN
 app.post('/api/auth/login', async (req, res) => {
-    const { email, password, role } = req.body;
-    const users = db.users.findMany();
-    const user = users.find(u => u.email === email && u.password === password && u.role === role);
+    try {
+        const { email, password } = req.body;
 
-    if (user) {
-        return res.json({
-            success: true,
-            user: {
-                id: user.id,
-                name: user.name,
-                email: user.email,
-                role: user.role,
-                schoolId: user.schoolId
-            },
-            token: "jwt_" + Math.random().toString(36).substring(7),
+        const user = await prisma.user.findUnique({
+            where: { email }
         });
+
+        if (!user) {
+            return res.status(400).json({ success: false, message: "User not found" });
+        }
+
+        const isMatch = await bcrypt.compare(password, user.password);
+
+        if (!isMatch) {
+            return res.status(400).json({ success: false, message: "Wrong password" });
+        }
+
+        const token = jwt.sign(
+            { userId: user.id, role: user.role },
+            process.env.JWT_SECRET,
+            { expiresIn: '7d' }
+        );
+
+        res.json({
+            success: true,
+            token,
+            user
+        });
+
+    } catch (err) {
+        res.status(500).json({ error: err.message });
     }
-    return res.status(401).json({ success: false, message: "Invalid credentials" });
 });
 
-// Student Routes
-app.get('/api/students', (req, res) => {
-    res.json({ success: true, data: db.students.findMany() });
+
+/* =========================
+   🔐 AUTH MIDDLEWARE
+========================= */
+
+const auth = (req, res, next) => {
+    const token = req.headers.authorization;
+
+    if (!token) return res.status(401).json({ message: "No token" });
+
+    try {
+        const decoded = jwt.verify(token, process.env.JWT_SECRET);
+        req.user = decoded;
+        next();
+    } catch {
+        res.status(401).json({ message: "Invalid token" });
+    }
+};
+
+
+/* =========================
+   👨‍🎓 STUDENTS
+========================= */
+
+app.get('/api/students', auth, async (req, res) => {
+    const students = await prisma.student.findMany({
+        include: { user: true }
+    });
+    res.json({ success: true, data: students });
 });
 
-app.post('/api/students', async (req, res) => {
-    const student = await db.students.create(req.body);
+app.post('/api/students', auth, async (req, res) => {
+    try {
+        const { firstName, lastName, admissionNo, class: className, section, parentName, phone } = req.body;
+        
+        const hashedPassword = await bcrypt.hash("student123", 10);
+        
+        const user = await prisma.user.create({
+            data: {
+                name: `${firstName} ${lastName}`,
+                email: `student_${admissionNo}@skpschool.com`,
+                phone,
+                password: hashedPassword,
+                role: "student",
+                studentProfile: {
+                    create: {
+                        admissionNo,
+                        class: className,
+                        section,
+                        parentName,
+                    }
+                }
+            },
+            include: { studentProfile: true }
+        });
+
+        res.json({ success: true, data: user.studentProfile });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+app.put('/api/students/:id', auth, async (req, res) => {
+    const student = await prisma.student.update({
+        where: { id: parseInt(req.params.id) },
+        data: req.body
+    });
     res.json({ success: true, data: student });
 });
 
-app.put('/api/students/:id', async (req, res) => {
-    const student = await db.students.update(req.params.id, req.body);
-    res.json({ success: true, data: student });
-});
-
-app.delete('/api/students/:id', async (req, res) => {
-    await db.students.delete(req.params.id);
+app.delete('/api/students/:id', auth, async (req, res) => {
+    await prisma.student.delete({
+        where: { id: parseInt(req.params.id) }
+    });
     res.json({ success: true, message: "Student deleted" });
 });
 
-// Fee Routes
-app.get('/api/fees', (req, res) => {
+
+/* =========================
+   👩‍🏫 TEACHERS
+========================= */
+
+app.get('/api/teachers', auth, async (req, res) => {
+    const teachers = await prisma.teacher.findMany({
+        include: { user: true }
+    });
+    res.json({ success: true, data: teachers });
+});
+
+app.post('/api/teachers', auth, async (req, res) => {
+    const teacher = await prisma.teacher.create({
+        data: req.body
+    });
+    res.json({ success: true, data: teacher });
+});
+
+
+/* =========================
+   💰 FEES
+========================= */
+
+app.get('/api/fees', auth, async (req, res) => {
     const { studentId } = req.query;
-    let fees = db.fees.findMany();
-    if (studentId) {
-        fees = fees.filter(f => f.studentId === parseInt(studentId));
-    }
+
+    const fees = await prisma.fee.findMany({
+        where: studentId ? { studentId: parseInt(studentId) } : {},
+        include: { student: true }
+    });
+
     res.json({ success: true, data: fees });
 });
 
-app.post('/api/fees', async (req, res) => {
-    const fee = await db.fees.create(req.body);
+app.post('/api/fees', auth, async (req, res) => {
+    const fee = await prisma.fee.create({
+        data: req.body
+    });
     res.json({ success: true, data: fee });
 });
 
-// Circular Routes
-app.get('/api/circulars', (req, res) => {
-    res.json({ success: true, data: db.circulars.findMany() });
+
+/* =========================
+   📢 CIRCULARS
+========================= */
+
+app.get('/api/circulars', async (req, res) => {
+    const circulars = await prisma.circular.findMany();
+    res.json({ success: true, data: circulars });
 });
 
-app.post('/api/circulars', async (req, res) => {
-    const circular = await db.circulars.create(req.body);
-    res.json({ success: true, message: "Circular posted", data: circular });
-});
-
-app.put('/api/circulars/:id', async (req, res) => {
-    const circular = await db.circulars.update(req.params.id, req.body);
+app.post('/api/circulars', auth, async (req, res) => {
+    const circular = await prisma.circular.create({
+        data: req.body
+    });
     res.json({ success: true, data: circular });
 });
 
-app.delete('/api/circulars/:id', async (req, res) => {
-    await db.circulars.delete(req.params.id);
-    res.json({ success: true, message: "Circular deleted" });
+app.put('/api/circulars/:id', auth, async (req, res) => {
+    const circular = await prisma.circular.update({
+        where: { id: parseInt(req.params.id) },
+        data: req.body
+    });
+    res.json({ success: true, data: circular });
 });
 
-// Admission Routes
-app.get('/api/admission', (req, res) => {
-    res.json({ success: true, data: db.admissions.findMany() });
+app.delete('/api/circulars/:id', auth, async (req, res) => {
+    await prisma.circular.delete({
+        where: { id: parseInt(req.params.id) }
+    });
+    res.json({ success: true, message: "Deleted" });
+});
+
+
+/* =========================
+   📝 ADMISSIONS
+========================= */
+
+app.get('/api/admission', async (req, res) => {
+    const data = await prisma.admission.findMany();
+    res.json({ success: true, data });
 });
 
 app.post('/api/admission', async (req, res) => {
-    const submission = await db.admissions.create({ ...req.body, status: "pending" });
+    const submission = await prisma.admission.create({
+        data: {
+            ...req.body,
+            status: "pending"
+        }
+    });
+
     res.json({
         success: true,
-        message: "Application submitted! Tracking ID: SPS-" + submission.id,
+        message: "Application submitted!",
         data: submission
     });
 });
 
-app.put('/api/admission/:id', async (req, res) => {
-    const admission = await db.admissions.update(req.params.id, req.body);
-    res.json({ success: true, data: admission });
+
+/* =========================
+   🖼 PHOTOS
+========================= */
+
+app.get('/api/photos', async (req, res) => {
+    const data = await prisma.photo.findMany();
+    res.json({ success: true, data });
 });
 
-// Photo/Gallery Routes
-app.get('/api/photos', (req, res) => {
-    res.json({ success: true, data: db.photos.findMany() });
-});
-
-app.post('/api/photos', async (req, res) => {
-    const photo = await db.photos.create(req.body);
+app.post('/api/photos', auth, async (req, res) => {
+    const photo = await prisma.photo.create({
+        data: req.body
+    });
     res.json({ success: true, data: photo });
 });
 
-app.delete('/api/photos/:id', async (req, res) => {
-    await db.photos.delete(req.params.id);
-    res.json({ success: true, message: "Photo deleted" });
+
+/* =========================
+   🛒 STATIONERY
+========================= */
+
+app.get('/api/stationery', async (req, res) => {
+    const data = await prisma.stationery.findMany();
+    res.json({ success: true, data });
 });
 
-// Stationery Store Routes
-app.get('/api/stationery', (req, res) => {
-    res.json({ success: true, data: db.stationery.findMany() });
-});
-
-app.post('/api/stationery', async (req, res) => {
-    const item = await db.stationery.create(req.body);
+app.post('/api/stationery', auth, async (req, res) => {
+    const item = await prisma.stationery.create({
+        data: req.body
+    });
     res.json({ success: true, data: item });
 });
 
-app.put('/api/stationery/:id', async (req, res) => {
-    const item = await db.stationery.update(req.params.id, req.body);
-    res.json({ success: true, data: item });
-});
 
-app.delete('/api/stationery/:id', async (req, res) => {
-    await db.stationery.delete(req.params.id);
-    res.json({ success: true, message: "Item deleted" });
-});
+/* =========================
+   📦 ORDERS
+========================= */
 
-// Order Routes
-app.get('/api/orders', (req, res) => {
-    res.json({ success: true, data: db.orders.findMany() });
+app.get('/api/orders', auth, async (req, res) => {
+    const data = await prisma.order.findMany();
+    res.json({ success: true, data });
 });
 
 app.post('/api/orders', async (req, res) => {
-    const order = await db.orders.create({ ...req.body, status: "pending", createdAt: new Date().toISOString() });
-    res.json({ success: true, message: "Order placed successfully", data: order });
-});
+    const order = await prisma.order.create({
+        data: {
+            ...req.body,
+            status: "pending",
+            createdAt: new Date()
+        }
+    });
 
-app.put('/api/orders/:id', async (req, res) => {
-    const order = await db.orders.update(req.params.id, req.body);
     res.json({ success: true, data: order });
 });
 
-// Init/Seed Route
-app.get('/api/init', async (req, res) => {
-    const users = db.users.findMany();
-    if (users.length > 0) return res.json({ success: true, message: "Already initialized" });
 
-    const admin = await db.users.create({ name: "Super Admin", email: "admin@skpsainik.edu.in", password: "password123", role: "admin" });
-    const teacher = await db.users.create({ name: "Abhishek Maurya", email: "abhishek@skpsainik.edu.in", password: "password123", role: "teacher" });
-    const studentUser = await db.users.create({ name: "Rahul Sharma", email: "rahul@student.edu.in", password: "password123", role: "student", schoolId: "SPS2026001" });
+/* =========================
+   📊 ANALYTICS
+========================= */
 
-    await db.students.create({ userId: studentUser.id, admissionNo: "SPS2026001", firstName: "Rahul", lastName: "Sharma", class: "9th", section: "A", parentName: "Mr. Sharma" });
-    await db.circulars.create({ title: "Annual Sports Meet 2026", category: "Sports", description: "The annual sports meet will be held on Feb 25th.", date: new Date().toISOString() });
+app.get('/api/analytics', auth, async (req, res) => {
+    try {
+        const [studentCount, teacherCount, revenue, pending] = await Promise.all([
+            prisma.student.count(),
+            prisma.teacher.count(),
+            prisma.fee.aggregate({ _sum: { amount: true }, where: { status: 'paid' } }),
+            prisma.fee.aggregate({ _sum: { amount: true }, where: { status: 'pending' } })
+        ]);
 
-    // Seed Stationery
-    await db.stationery.create({ name: "School Diary 2026", category: "Books", price: 150, stock: 500, description: "Official SKP Sainik School diary for assignments and notes.", image: "https://images.unsplash.com/photo-1544816155-12df9643f363?q=80&w=400&auto=format&fit=crop" });
-    await db.stationery.create({ name: "Biology Lab Coat", category: "Uniform", price: 450, stock: 100, description: "Standard white lab coat for senior science students.", image: "https://images.unsplash.com/photo-1576086213369-97a306d36557?q=80&w=400&auto=format&fit=crop" });
-    await db.stationery.create({ name: "Geometry Box set", category: "Stationery", price: 120, stock: 200, description: "Complete set with compass, divider, and rulers.", image: "https://images.unsplash.com/photo-1583484963886-cfe2bef37f52?q=80&w=400&auto=format&fit=crop" });
+        const recentAdmissions = await prisma.admission.findMany({
+            take: 5,
+            orderBy: { createdAt: 'desc' }
+        });
 
-    res.json({ success: true, message: "System initialized and seeded." });
+        res.json({
+            success: true,
+            data: {
+                studentCount,
+                teacherCount,
+                totalRevenue: revenue._sum.amount || 0,
+                pendingFees: pending._sum.amount || 0,
+                recentAdmissions
+            }
+        });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
 });
 
+
+/* =========================
+   🌱 INIT (SEED DATA)
+========================= */
+
+app.get('/api/init', async (req, res) => {
+    const users = await prisma.user.findMany();
+
+    if (users.length > 0) {
+        return res.json({ success: true, message: "Already initialized" });
+    }
+
+    const hashed = await bcrypt.hash("password123", 10);
+
+    const admin = await prisma.user.create({
+        data: {
+            name: "Admin",
+            email: "admin@school.com",
+            password: hashed,
+            role: "admin"
+        }
+    });
+
+    res.json({ success: true, message: "Seeded successfully", admin });
+});
+
+
+/* =========================
+   🚀 START SERVER
+========================= */
+
 app.listen(PORT, () => {
-    console.log(`Backend server running at http://localhost:${PORT}`);
+    console.log(`Server running at http://localhost:${PORT}`);
 });
