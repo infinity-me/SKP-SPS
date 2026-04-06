@@ -5,7 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation"
 import Image from "next/image"
 import Link from "next/link"
 import { motion } from "framer-motion"
-import { LogIn, Phone, Mail, Fingerprint, ShieldCheck } from "lucide-react"
+import { LogIn, Phone, Mail, Fingerprint, ShieldCheck, User } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { authService } from "@/lib/api"
 
@@ -17,6 +17,8 @@ function AuthContent() {
     const [authMethod, setAuthMethod] = useState<"id" | "phone" | "google">("id")
     const [email, setEmail] = useState("")
     const [password, setPassword] = useState("")
+    const [guestName, setGuestName] = useState("")
+    const [guestEmail, setGuestEmail] = useState("")
     const [schoolId, setSchoolId] = useState("")
     const [isLoading, setIsLoading] = useState(false)
     const [error, setError] = useState("")
@@ -28,7 +30,27 @@ function AuthContent() {
         } else {
             setRole("student")
         }
-    }, [isAdminMode])
+
+        const handleRedirect = async () => {
+            const token = searchParams.get('token')
+            const redirectRole = searchParams.get('role') as any
+            
+            if (token && redirectRole) {
+                localStorage.setItem('token', token)
+                try {
+                    // Fetch profile to store in localStorage
+                    await authService.getProfile()
+                    const targetRoute = redirectRole === 'guest' ? 'dashboard' : redirectRole
+                    router.push(`/${targetRoute}`)
+                } catch (err) {
+                    console.error("Failed to fetch profile during redirect", err)
+                    setError("Failed to complete login. Please try again.")
+                }
+            }
+        }
+
+        handleRedirect()
+    }, [isAdminMode, searchParams, router])
 
     const handleLogin = async (e: React.FormEvent) => {
         e.preventDefault()
@@ -38,43 +60,32 @@ function AuthContent() {
         try {
             let response;
             if (role === 'guest') {
-                response = await authService.login({ email, password, role })
+                response = await authService.registerGuest({ name: guestName, email: guestEmail })
             } else if (role === 'admin') {
                 response = await authService.login({ email, password, role })
             } else {
-                // For Student/Teacher, they can use email or schoolId
-                // For now, let's assume they use email/password if they have it
-                // Or we can add a verification step
                 response = await authService.login({ email, password, role })
             }
 
             if (response.success) {
-                localStorage.setItem('user', JSON.stringify(response.user))
-                router.push(`/${role}`)
+                const targetRoute = role === 'guest' ? 'dashboard' : role
+                router.push(`/${targetRoute}`)
             } else {
                 setError(response.message || "Invalid credentials")
             }
         } catch (err: any) {
-            setError(err.response?.data?.message || "An error occurred during login")
+            const errorMessage = err.response?.data?.message || err.message || "An error occurred during login"
+            setError(errorMessage)
         } finally {
             setIsLoading(false)
         }
     }
 
-    const handleGoogleLogin = async () => {
+    const handleGoogleLogin = () => {
         setIsLoading(true)
-        try {
-            // In a real app, use @react-oauth/google to get idToken
-            // For demo, we'll simulate the call to our backend
-            const response = await authService.googleLogin("mock-token", role)
-            if (response.success) {
-                router.push(`/${response.user.role}`)
-            }
-        } catch (err) {
-            setError("Google login failed")
-        } finally {
-            setIsLoading(false)
-        }
+        // Redirect to Backend Google Auth Endpoint
+        const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api"
+        window.location.href = `${apiUrl}/auth/google?role=${role}`
     }
 
     const availableRoles = isAdminMode ? ["admin"] : ["student", "teacher", "guest"]
@@ -154,19 +165,19 @@ function AuthContent() {
                     </div>
 
                     {/* Social Login */}
-                    {!isAdminMode && (
+                    {!isAdminMode && role !== 'guest' && (
                         <div className="space-y-3">
                             <button
                                 onClick={handleGoogleLogin}
                                 className="w-full flex items-center justify-center gap-3 py-3 border border-slate-200 rounded-xl hover:bg-slate-50 transition-all font-semibold text-primary shadow-sm"
                             >
                                 <Image src="https://www.gstatic.com/images/branding/product/1x/gsa_512dp.png" alt="Google" width={20} height={20} />
-                                Continue with {role === 'guest' ? "Guest " : ""}Google
+                                Continue with Google
                             </button>
                         </div>
                     )}
 
-                    {!isAdminMode && (
+                    {!isAdminMode && role !== 'guest' && (
                         <div className="relative">
                             <div className="absolute inset-0 flex items-center">
                                 <span className="w-full border-t border-slate-100" />
@@ -184,7 +195,7 @@ function AuthContent() {
                                 {error}
                             </div>
                         )}
-                        {!isAdminMode && (
+                        {!isAdminMode && role !== 'guest' && (
                             <div className="flex gap-2">
                                 <button
                                     type="button"
@@ -209,7 +220,24 @@ function AuthContent() {
                             </div>
                         )}
 
-                        {authMethod === "id" && (
+                        {role === 'guest' ? (
+                            <div className="space-y-4">
+                                <InputGroup
+                                    label="Full Name"
+                                    placeholder="Enter your name"
+                                    icon={<User size={18} />}
+                                    value={guestName}
+                                    onChange={(e: any) => setGuestName(e.target.value)}
+                                />
+                                <InputGroup
+                                    label="Email Address"
+                                    placeholder="your@email.com"
+                                    icon={<Mail size={18} />}
+                                    value={guestEmail}
+                                    onChange={(e: any) => setGuestEmail(e.target.value)}
+                                />
+                            </div>
+                        ) : authMethod === "id" && (
                             <div className="space-y-4">
                                 <InputGroup
                                     label="Email Address / ID"
@@ -241,11 +269,11 @@ function AuthContent() {
                             disabled={isLoading}
                             className="w-full py-4 bg-primary text-white rounded-2xl font-bold hover:bg-navy-800 transition-all shadow-xl shadow-primary/20 disabled:opacity-50"
                         >
-                            {isLoading ? "Signing In..." : "Sign In"}
+                            {isLoading ? "Processing..." : role === 'guest' ? "Continue as Guest" : "Sign In"}
                         </button>
                     </form>
 
-                    <p className="text-center text-sm text-slate-500">
+                    <div className="text-center text-sm text-slate-500">
                         {isAdminMode ? (
                             <Link href="/login" className="text-slate-400 hover:text-primary transition-colors font-medium">Back to Student/Teacher Login</Link>
                         ) : role === 'guest' ? (
@@ -256,7 +284,7 @@ function AuthContent() {
                                 <p className="text-xs">Professional educator? <Link href="/apply-teacher" className="text-primary font-bold hover:underline">Apply as a Teacher</Link></p>
                             </div>
                         )}
-                    </p>
+                    </div>
                 </div>
 
                 <div className="absolute bottom-6 left-1/2 -translate-x-1/2 text-[10px] text-slate-300 uppercase tracking-widest font-bold">

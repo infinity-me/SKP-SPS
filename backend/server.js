@@ -16,6 +16,65 @@ app.use(express.json());
 const { OAuth2Client } = require('google-auth-library');
 const googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 
+const passport = require('passport');
+const GoogleStrategy = require('passport-google-oauth20').Strategy;
+const session = require('express-session');
+
+app.use(session({
+    secret: process.env.JWT_SECRET || 'fallback-secret',
+    resave: false,
+    saveUninitialized: true
+}));
+
+app.use(passport.initialize());
+app.use(passport.session());
+
+passport.use(new GoogleStrategy({
+    clientID: process.env.GOOGLE_CLIENT_ID || 'dummy-id',
+    clientSecret: process.env.GOOGLE_CLIENT_SECRET || 'dummy-secret',
+    callbackURL: process.env.GOOGLE_CALLBACK_URL || "http://localhost:5000/api/auth/google/callback"
+  },
+  async (accessToken, refreshToken, profile, done) => {
+    try {
+        const email = profile.emails[0].value;
+        const name = profile.displayName;
+        const googleId = profile.id;
+
+        let user = await prisma.user.findUnique({
+            where: { email }
+        });
+
+        if (user) {
+            if (!user.googleId) {
+                user = await prisma.user.update({
+                    where: { id: user.id },
+                    data: { googleId }
+                });
+            }
+        } else {
+            user = await prisma.user.create({
+                data: {
+                    email,
+                    name,
+                    googleId,
+                    role: "guest",
+                    isVerified: true
+                }
+            });
+        }
+        return done(null, user);
+    } catch (err) {
+        return done(err, null);
+    }
+  }
+));
+
+passport.serializeUser((user, done) => done(null, user.id));
+passport.deserializeUser(async (id, done) => {
+    const user = await prisma.user.findUnique({ where: { id } });
+    done(null, user);
+});
+
 /* =========================
    🔐 AUTH ROUTES
 ========================= */
@@ -23,20 +82,29 @@ const googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 // LOGIN
 app.post('/api/auth/login', async (req, res) => {
     try {
-        const { email, password } = req.body;
+        const { email, password, role } = req.body;
 
         const user = await prisma.user.findUnique({
             where: { email }
         });
 
-        if (!user || !user.password) {
-            return res.status(400).json({ success: false, message: "User not found or using Google login" });
+        if (!user) {
+            return res.status(400).json({ success: false, message: "User not found" });
+        }
+
+        // Check if role matches (if provided)
+        if (role && user.role !== role) {
+            return res.status(400).json({ success: false, message: `This account is registered as a ${user.role}, not a ${role}.` });
+        }
+
+        if (!user.password) {
+            return res.status(400).json({ success: false, message: "This account uses Google login. Please use 'Continue with Google'." });
         }
 
         const isMatch = await bcrypt.compare(password, user.password);
 
         if (!isMatch) {
-            return res.status(400).json({ success: false, message: "Wrong password" });
+            return res.status(400).json({ success: false, message: "Incorrect password" });
         }
 
         const token = jwt.sign(
@@ -52,7 +120,8 @@ app.post('/api/auth/login', async (req, res) => {
         });
 
     } catch (err) {
-        res.status(500).json({ error: err.message });
+        console.error("Login Error:", err);
+        res.status(500).json({ success: false, message: "Server error during login." });
     }
 });
 
@@ -122,10 +191,30 @@ app.post('/api/auth/google', async (req, res) => {
 // REGISTER GUEST
 app.post('/api/auth/register-guest', async (req, res) => {
     try {
-        const { name, email, password } = req.body;
-        const hashedPassword = await bcrypt.hash(password, 10);
+        const { name, email, password = "guest_password_123" } = req.body;
+        
+        let user = await prisma.user.findUnique({ where: { email } });
+        
+        if (user) {
+            // If already a guest, just log them in
+            if (user.role === 'guest') {
+                const token = jwt.sign(
+                    { userId: user.id, role: user.role },
+                    process.env.JWT_SECRET,
+                    { expiresIn: '7d' }
+                );
+                return res.json({ success: true, token, user });
+            } else {
+                // If student or teacher, they should use appropriate login
+                return res.status(400).json({ 
+                    success: false, 
+                    message: `This email is registered as a ${user.role}. Please use the ${user.role} login option.` 
+                });
+            }
+        }
 
-        const user = await prisma.user.create({
+        const hashedPassword = await bcrypt.hash(password, 10);
+        user = await prisma.user.create({
             data: {
                 name,
                 email,
@@ -143,9 +232,46 @@ app.post('/api/auth/register-guest', async (req, res) => {
 
         res.json({ success: true, token, user });
     } catch (err) {
-        res.status(500).json({ error: err.message });
+        console.error("Guest Registration Error:", err);
+        res.status(500).json({ success: false, message: "Server error during registration." });
     }
 });
+
+// REDIRECT GOOGLE AUTH (STANDARD OAUTH2 FLOW)
+app.get('/api/auth/google', (req, res, next) => {
+    const { role } = req.query;
+    // Store role in state to use it after callback
+    const state = role ? Buffer.from(JSON.stringify({ role })).toString('base64') : undefined;
+    passport.authenticate('google', { 
+        scope: ['profile', 'email'],
+        state
+    })(req, res, next);
+});
+
+app.get('/api/auth/google/callback', 
+    passport.authenticate('google', { failureRedirect: '/login' }),
+    (req, res) => {
+        let role = req.user.role; // Default to user's existing role
+        
+        // Try to get role from state if we want to force it (e.g. for guest signup)
+        try {
+            if (req.query.state) {
+                const state = JSON.parse(Buffer.from(req.query.state, 'base64').toString());
+                if (state.role) role = state.role;
+            }
+        } catch (e) {}
+
+        const token = jwt.sign(
+            { userId: req.user.id, role: req.user.role },
+            process.env.JWT_SECRET,
+            { expiresIn: '7d' }
+        );
+
+        // Redirect back to frontend with token
+        const frontendUrl = process.env.FRONTEND_URL || "http://localhost:3000";
+        res.redirect(`${frontendUrl}/login?token=${token}&role=${req.user.role}`);
+    }
+);
 
 // VERIFY SCHOOL ID (Check existence for student/teacher)
 app.get('/api/auth/verify-id', async (req, res) => {
@@ -194,6 +320,18 @@ const auth = (req, res, next) => {
         res.status(401).json({ message: "Invalid token" });
     }
 };
+
+// GET CURRENT USER PROFILE
+app.get('/api/auth/me', auth, async (req, res) => {
+    try {
+        const user = await prisma.user.findUnique({
+            where: { id: req.user.userId }
+        });
+        res.json({ success: true, user });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
 
 
 /* =========================

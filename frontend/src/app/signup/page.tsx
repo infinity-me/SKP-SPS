@@ -35,18 +35,10 @@ export default function SignupPage() {
         }
     }
 
-    const handleGoogleSignup = async () => {
+    const handleGoogleSignup = () => {
         setIsLoading(true)
-        try {
-            const response = await authService.googleLogin("mock-token", "guest")
-            if (response.success) {
-                router.push("/dashboard")
-            }
-        } catch (err) {
-            setError("Google signup failed")
-        } finally {
-            setIsLoading(false)
-        }
+        const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api"
+        window.location.href = `${apiUrl}/auth/google?role=guest`
     }
 
     return (

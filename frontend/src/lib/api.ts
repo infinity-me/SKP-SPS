@@ -64,6 +64,13 @@ export const authService = {
         const res = await api.get(`/auth/verify-id?role=${role}&id=${id}`);
         return res.data;
     },
+    getProfile: async () => {
+        const res = await api.get('/auth/me');
+        if (res.data?.user) {
+            localStorage.setItem("user", JSON.stringify(res.data.user));
+        }
+        return res.data;
+    },
 };
 
 
