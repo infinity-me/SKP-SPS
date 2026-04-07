@@ -34,6 +34,7 @@ const menuItems = [
     },
     {
         group: "Content CMS", items: [
+            { name: "Calendar", href: "/admin/calendar", icon: <FileText size={18} /> },
             { name: "Circulars", href: "/admin/circulars", icon: <Bell size={18} /> },
             { name: "Notices", href: "/admin/notices", icon: <Megaphone size={18} /> },
             { name: "Gallery", href: "/admin/gallery", icon: <ImageIcon size={18} /> },

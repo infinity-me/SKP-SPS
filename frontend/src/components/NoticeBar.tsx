@@ -39,7 +39,7 @@ export default function NoticeBar() {
     const cfg = TYPE_STYLE[notices[0].type] ?? TYPE_STYLE.info
 
     return (
-        <div className={`w-full flex items-stretch ${cfg.bar} shadow-sm z-[9999] relative`} style={{ height: "36px" }}>
+        <div className={`w-full flex items-stretch ${cfg.bar} shadow-sm z-0 relative`} style={{ height: "36px" }}>
 
             {/* LEFT LABEL CHIP — e.g. "NOTICE" */}
             <div

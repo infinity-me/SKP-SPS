@@ -1,79 +1,93 @@
 "use client"
 
+import { useState, useEffect } from "react"
+import { calendarService } from "@/lib/api"
+import { Calendar as CalendarIcon, Clock, MapPin, ChevronRight } from "lucide-react"
 import { motion } from "framer-motion"
-import { Calendar as CalendarIcon, ChevronLeft, ChevronRight, Bell } from "lucide-react"
+import { cn } from "@/lib/utils"
 
 export default function CalendarPage() {
-    return (
-        <div className="pt-24 min-h-screen bg-slate-50">
-            <section className="bg-primary py-20 px-6 text-center">
-                <div className="max-w-7xl mx-auto">
-                    <h1 className="text-4xl md:text-6xl font-heading font-black text-white mb-6">Academic <span className="text-gold-500">Calendar</span></h1>
-                    <p className="text-white/60 max-w-2xl mx-auto text-lg">Stay updated with all school events, holidays, and examination schedules.</p>
-                </div>
-            </section>
+    const [events, setEvents] = useState<any[]>([])
+    const [isLoading, setIsLoading] = useState(true)
 
-            <section className="py-24 px-6 max-w-7xl mx-auto">
-                <div className="grid grid-cols-1 lg:grid-cols-3 gap-12">
-                    <div className="lg:col-span-2 bg-white rounded-3xl p-8 border border-slate-100 shadow-sm">
-                        <div className="flex items-center justify-between mb-8 pb-6 border-b border-slate-50">
-                            <h2 className="text-2xl font-heading font-bold text-primary">February 2026</h2>
-                            <div className="flex gap-2">
-                                <button className="p-2 hover:bg-slate-50 rounded-lg transition-colors"><ChevronLeft /></button>
-                                <button className="p-2 hover:bg-slate-50 rounded-lg transition-colors"><ChevronRight /></button>
-                            </div>
-                        </div>
+    useEffect(() => {
+        fetchEvents()
+    }, [])
 
-                        <div className="grid grid-cols-7 gap-px bg-slate-100 rounded-xl overflow-hidden border border-slate-100">
-                            {["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map((day) => (
-                                <div key={day} className="bg-slate-50 py-4 text-center text-[10px] font-black uppercase tracking-widest text-slate-400">
-                                    {day}
-                                </div>
-                            ))}
-                            {Array.from({ length: 28 }).map((_, i) => (
-                                <div key={i} className="bg-white aspect-square p-2 group cursor-pointer hover:bg-slate-50 transition-all flex flex-col justify-between">
-                                    <span className={`text-sm font-bold ${[1, 8, 15, 22].includes(i + 1) ? "text-red-500" : "text-primary"}`}>{i + 1}</span>
-                                    {(i + 1) === 11 && <div className="w-full h-1 bg-gold-500 rounded-full" />}
-                                    {(i + 1) === 25 && <div className="w-full h-1 bg-blue-500 rounded-full" />}
-                                </div>
-                            ))}
-                        </div>
-                    </div>
-
-                    <div className="space-y-8">
-                        <div className="bg-white p-8 rounded-3xl border border-slate-100 shadow-sm">
-                            <h3 className="text-xl font-heading font-bold text-primary mb-8 flex items-center gap-2">
-                                <Bell className="text-gold-500" size={20} /> Upcoming Events
-                            </h3>
-                            <div className="space-y-8">
-                                <EventItem date="Feb 11" title="Mahashivratri" type="Holiday" color="red" />
-                                <EventItem date="Feb 25" title="Annual Sports Meet" type="Event" color="blue" />
-                                <EventItem date="Mar 10" title="Term End Exams" type="Academic" color="gold" />
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </section>
-        </div>
-    )
-}
-
-function EventItem({ date, title, type, color }: any) {
-    const colors: any = {
-        red: "bg-red-500",
-        blue: "bg-blue-500",
-        gold: "bg-gold-500 font-bold text-ash"
+    const fetchEvents = async () => {
+        try {
+            const res = await calendarService.getAll()
+            setEvents(res.data.data)
+        } catch (error) {
+            console.error("Failed to fetch events")
+        } finally {
+            setIsLoading(false)
+        }
     }
+
     return (
-        <div className="flex gap-4">
-            <div className={`w-12 h-12 ${colors[color]} rounded-xl shrink-0 flex flex-col items-center justify-center text-white overflow-hidden shadow-lg`}>
-                <span className="text-[10px] font-black uppercase">{date.split(' ')[0]}</span>
-                <span className="text-lg font-bold leading-none">{date.split(' ')[1]}</span>
-            </div>
-            <div>
-                <h4 className="font-bold text-primary text-sm">{title}</h4>
-                <p className="text-[10px] text-muted-foreground uppercase font-black tracking-widest mt-1">{type}</p>
-            </div>
+        <div className="min-h-screen bg-slate-50">
+            <header className="bg-primary pt-32 pb-24 px-6 relative overflow-hidden">
+                <div className="max-w-7xl mx-auto relative z-10 text-center">
+                    <motion.h1 
+                        initial={{ opacity: 0, scale: 0.9 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        className="text-4xl md:text-6xl font-heading font-black text-white mb-6 uppercase tracking-tighter italic"
+                    >
+                        Academic <span className="text-gold-500">Calendar</span>
+                    </motion.h1>
+                    <p className="text-white/70 max-w-2xl mx-auto font-medium">Keep track of school events, holidays, examinations, and important dates.</p>
+                </div>
+            </header>
+
+            <main className="max-w-4xl mx-auto px-6 py-16">
+                <div className="space-y-8">
+                    {events.length === 0 && !isLoading ? (
+                        <div className="py-24 text-center border-2 border-dashed border-slate-200 rounded-[3rem] bg-white">
+                            <CalendarIcon size={64} className="mx-auto text-slate-100 mb-6" />
+                            <p className="text-slate-400 font-bold italic">No upcoming events scheduled.</p>
+                        </div>
+                    ) : (
+                        events.map((event, index) => (
+                            <motion.div 
+                                key={event.id}
+                                initial={{ opacity: 0, x: -20 }}
+                                animate={{ opacity: 1, x: 0 }}
+                                transition={{ delay: index * 0.1 }}
+                                className="bg-white rounded-3xl border border-slate-200 shadow-sm p-8 flex flex-col md:flex-row items-start md:items-center gap-8 group hover:border-gold-500/50 hover:shadow-xl hover:shadow-primary/5 transition-all duration-500"
+                            >
+                                <div className="flex-shrink-0 w-24 h-24 bg-slate-50 rounded-[2rem] flex flex-col items-center justify-center text-primary group-hover:bg-primary group-hover:text-white transition-all duration-500">
+                                    <span className="text-[10px] font-black uppercase tracking-widest opacity-60">
+                                        {new Date(event.date).toLocaleDateString(undefined, { month: 'short' })}
+                                    </span>
+                                    <span className="text-3xl font-heading font-black leading-none">
+                                        {new Date(event.date).getDate()}
+                                    </span>
+                                </div>
+                                <div className="flex-grow">
+                                    <div className="flex flex-wrap items-center gap-3 mb-2">
+                                        <h3 className="text-xl font-heading font-black text-primary uppercase italic group-hover:text-gold-500 transition-colors">{event.title}</h3>
+                                        <span className={cn(
+                                            "px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest",
+                                            event.type === "holiday" ? "bg-red-100 text-red-700" :
+                                            event.type === "exam" ? "bg-blue-100 text-blue-700" :
+                                            event.type === "academic" ? "bg-green-100 text-green-700" : "bg-slate-100 text-slate-600"
+                                        )}>
+                                            {event.type}
+                                        </span>
+                                    </div>
+                                    <p className="text-slate-500 text-sm font-medium leading-relaxed">{event.description || "School event scheduled for all students."}</p>
+                                </div>
+                                <div className="flex-shrink-0">
+                                    <button className="p-4 rounded-2xl bg-slate-50 text-slate-400 group-hover:bg-primary group-hover:text-gold-500 transition-all duration-500">
+                                        <ChevronRight size={20} />
+                                    </button>
+                                </div>
+                            </motion.div>
+                        ))
+                    )}
+                </div>
+            </main>
         </div>
     )
 }

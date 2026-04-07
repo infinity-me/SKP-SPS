@@ -4,14 +4,46 @@ const express = require('express');
 const cors = require('cors');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
+const path = require('path');
+const multer = require('multer');
 
 const prisma = require('./db');
+
+const fs = require('fs');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
 
 app.use(cors());
 app.use(express.json());
+
+// 📦 Ensure uploads directory exists
+const uploadsDir = path.join(__dirname, 'uploads');
+if (!fs.existsSync(uploadsDir)) {
+    fs.mkdirSync(uploadsDir, { recursive: true });
+}
+
+app.use('/uploads', express.static(uploadsDir));
+
+// 📁 Multer Config for Avatar Uploads
+const storage = multer.diskStorage({
+    destination: (req, file, cb) => cb(null, 'uploads/'),
+    filename: (req, file, cb) => {
+        const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+        cb(null, 'avatar-' + uniqueSuffix + path.extname(file.originalname));
+    }
+});
+const upload = multer({ 
+    storage,
+    limits: { fileSize: 5 * 1024 * 1024 }, // 5MB limit
+    fileFilter: (req, file, cb) => {
+        const filetypes = /jpeg|jpg|png|webp/;
+        const extname = filetypes.test(path.extname(file.originalname).toLowerCase());
+        const mimetype = filetypes.test(file.mimetype);
+        if (mimetype && extname) return cb(null, true);
+        cb(new Error('Only images (jpg, png, webp) are allowed!'));
+    }
+});
 
 const { OAuth2Client } = require('google-auth-library');
 const googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
@@ -308,16 +340,22 @@ app.get('/api/auth/verify-id', async (req, res) => {
 ========================= */
 
 const auth = (req, res, next) => {
-    const token = req.headers.authorization;
+    let token = req.header('Authorization') || req.headers.authorization;
 
-    if (!token) return res.status(401).json({ message: "No token" });
+    if (!token) return res.status(401).json({ message: "No token provided" });
+
+    // Handle "Bearer <token>" format
+    if (token.startsWith('Bearer ')) {
+        token = token.split(' ')[1];
+    }
 
     try {
         const decoded = jwt.verify(token, process.env.JWT_SECRET);
         req.user = decoded;
         next();
-    } catch {
-        res.status(401).json({ message: "Invalid token" });
+    } catch (err) {
+        console.error("Auth mismatch:", err.message);
+        res.status(401).json({ message: "Invalid or expired token" });
     }
 };
 
@@ -325,9 +363,81 @@ const auth = (req, res, next) => {
 app.get('/api/auth/me', auth, async (req, res) => {
     try {
         const user = await prisma.user.findUnique({
-            where: { id: req.user.userId }
+            where: { id: req.user.userId },
+            include: {
+                studentProfile: {
+                    include: {
+                        fees: {
+                            orderBy: { dueDate: 'desc' }
+                        }
+                    }
+                },
+                teacherProfile: true
+            }
         });
         res.json({ success: true, user });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// UPLOAD AVATAR (NEW)
+app.post('/api/auth/upload-avatar', auth, (req, res, next) => {
+    upload.single('avatar')(req, res, (err) => {
+        if (err instanceof multer.MulterError) {
+            return res.status(400).json({ success: false, message: `Upload error: ${err.message}` });
+        } else if (err) {
+            return res.status(500).json({ success: false, message: err.message });
+        }
+        next();
+    });
+}, async (req, res) => {
+    try {
+        if (!req.file) return res.status(400).json({ message: "No file received" });
+        
+        const avatarUrl = `http://localhost:5000/uploads/${req.file.filename}`;
+        
+        // Update user profile record
+        const updatedUser = await prisma.user.update({
+            where: { id: req.user.userId },
+            data: { profilePic: avatarUrl }
+        });
+
+        res.json({ success: true, avatarUrl, user: updatedUser });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// UPDATE PROFILE
+app.put('/api/auth/profile', auth, async (req, res) => {
+    try {
+        const { name, phone, profilePic, achievements } = req.body;
+        
+        // Update basic user info
+        const updatedUser = await prisma.user.update({
+            where: { id: req.user.userId },
+            data: { 
+                name, 
+                phone,
+                profilePic 
+            }
+        });
+
+        // Update role-specific info (achievements)
+        if (updatedUser.role === 'student') {
+            await prisma.student.update({
+                where: { userId: updatedUser.id },
+                data: { achievements }
+            });
+        } else if (updatedUser.role === 'teacher') {
+            await prisma.teacher.update({
+                where: { userId: updatedUser.id },
+                data: { achievements }
+            });
+        }
+
+        res.json({ success: true, user: updatedUser });
     } catch (err) {
         res.status(500).json({ error: err.message });
     }
@@ -462,22 +572,203 @@ app.put('/api/teacher-application/:id', auth, async (req, res) => {
    💰 FEES
 ========================= */
 
+// GET ALL FEES (Extended with student name)
 app.get('/api/fees', auth, async (req, res) => {
-    const { studentId } = req.query;
-
-    const fees = await prisma.fee.findMany({
-        where: studentId ? { studentId: parseInt(studentId) } : {},
-        include: { student: true }
-    });
-
-    res.json({ success: true, data: fees });
+    try {
+        const { studentId } = req.query;
+        const fees = await prisma.fee.findMany({
+            where: studentId ? { studentId: parseInt(studentId) } : {},
+            include: { 
+                student: {
+                    include: { user: true }
+                } 
+            },
+            orderBy: { dueDate: 'desc' }
+        });
+        res.json({ success: true, data: fees });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
 });
 
+// CREATE FEE
 app.post('/api/fees', auth, async (req, res) => {
-    const fee = await prisma.fee.create({
-        data: req.body
-    });
-    res.json({ success: true, data: fee });
+    try {
+        const fee = await prisma.fee.create({
+            data: req.body
+        });
+        res.json({ success: true, data: fee });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// UPDATE FEE
+app.put('/api/fees/:id', auth, async (req, res) => {
+    try {
+        const fee = await prisma.fee.update({
+            where: { id: parseInt(req.params.id) },
+            data: req.body
+        });
+        res.json({ success: true, data: fee });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// DELETE FEE
+app.delete('/api/fees/:id', auth, async (req, res) => {
+    try {
+        await prisma.fee.delete({
+            where: { id: parseInt(req.params.id) }
+        });
+        res.json({ success: true, message: "Fee record deleted" });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+/* =========================
+   📊 FEE STRUCTURE CRUD (NEW)
+========================= */
+
+app.get('/api/fee-structure', async (req, res) => {
+    try {
+        const structure = await prisma.feeStructure.findMany({
+            orderBy: { className: 'asc' }
+        });
+        res.json({ success: true, data: structure });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+app.post('/api/fee-structure', auth, async (req, res) => {
+    try {
+        const { className, feeType, amount, description } = req.body;
+        const newItem = await prisma.feeStructure.create({
+            data: { className, feeType, amount: parseFloat(amount), description }
+        });
+        res.json({ success: true, data: newItem });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+app.put('/api/fee-structure/:id', auth, async (req, res) => {
+    try {
+        const { id } = req.params;
+        const updated = await prisma.feeStructure.update({
+            where: { id: parseInt(id) },
+            data: req.body
+        });
+        res.json({ success: true, data: updated });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+app.delete('/api/fee-structure/:id', auth, async (req, res) => {
+    try {
+        const { id } = req.params;
+        await prisma.feeStructure.delete({ where: { id: parseInt(id) } });
+        res.json({ success: true, message: "Structure removed" });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+/* =========================
+   💳 AUTOMATED FEE GENERATION & PAYMENT (NEW)
+========================= */
+
+// LOOKUP PENDING FEES BY ADMISSION NO
+app.get('/api/fees/lookup/:admissionNo', async (req, res) => {
+    try {
+        const { admissionNo } = req.params;
+        const student = await prisma.student.findUnique({
+            where: { admissionNo },
+            include: { 
+                user: true,
+                fees: {
+                    where: { status: 'pending' },
+                    orderBy: { dueDate: 'asc' }
+                }
+            }
+        });
+        
+        if (!student) return res.status(404).json({ success: false, message: "Student not found" });
+        res.json({ success: true, student });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// PAY A FEE (MOCK)
+app.post('/api/fees/pay/:id', async (req, res) => {
+    try {
+        const { id } = req.params;
+        const updated = await prisma.fee.update({
+            where: { id: parseInt(id) },
+            data: { status: 'paid' }
+        });
+        res.json({ success: true, message: "Payment successful (Mock)", data: updated });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// BULK GENERATE MONTHLY FEES BASED ON STRUCTURE
+app.post('/api/fees/generate', auth, async (req, res) => {
+    try {
+        const { month, year } = req.body; // e.g. "April", 2026
+        const structures = await prisma.feeStructure.findMany();
+        const students = await prisma.student.findMany();
+        
+        let count = 0;
+        for (const student of students) {
+            // Find tuition structure for this student's class
+            const classStructure = structures.filter(s => s.className === student.class);
+            
+            for (const item of classStructure) {
+                // Check if already exists to avoid duplicates
+                const existing = await prisma.fee.findFirst({
+                    where: {
+                        studentId: student.id,
+                        type: `${item.feeType} (${month} ${year})`
+                    }
+                });
+                
+                if (!existing) {
+                    await prisma.fee.create({
+                        data: {
+                            studentId: student.id,
+                            amount: item.amount,
+                            type: `${item.feeType} (${month} ${year})`,
+                            status: 'pending',
+                            dueDate: new Date(year, new Date(Date.parse(month + " 1, " + year)).getMonth() + 1, 10) // 10th of next month
+                        }
+                    });
+                    count++;
+                }
+            }
+        }
+        
+        res.json({ success: true, message: `Generated ${count} fee records for ${month} ${year}` });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+app.delete('/api/fees/:id', auth, async (req, res) => {
+    try {
+        await prisma.fee.delete({
+            where: { id: parseInt(req.params.id) }
+        });
+        res.json({ success: true, message: "Fee record deleted" });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
 });
 
 
@@ -554,6 +845,17 @@ app.post('/api/photos', auth, async (req, res) => {
     res.json({ success: true, data: photo });
 });
 
+app.delete('/api/photos/:id', auth, async (req, res) => {
+    try {
+        await prisma.photo.delete({
+            where: { id: parseInt(req.params.id) }
+        });
+        res.json({ success: true, message: "Photo deleted" });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
 
 /* =========================
    🛒 STATIONERY
@@ -569,6 +871,29 @@ app.post('/api/stationery', auth, async (req, res) => {
         data: req.body
     });
     res.json({ success: true, data: item });
+});
+
+app.put('/api/stationery/:id', auth, async (req, res) => {
+    try {
+        const item = await prisma.stationery.update({
+            where: { id: parseInt(req.params.id) },
+            data: req.body
+        });
+        res.json({ success: true, data: item });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+app.delete('/api/stationery/:id', auth, async (req, res) => {
+    try {
+        await prisma.stationery.delete({
+            where: { id: parseInt(req.params.id) }
+        });
+        res.json({ success: true, message: "Item deleted" });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
 });
 
 
@@ -591,6 +916,73 @@ app.post('/api/orders', async (req, res) => {
     });
 
     res.json({ success: true, data: order });
+});
+
+app.put('/api/orders/:id', auth, async (req, res) => {
+    try {
+        const order = await prisma.order.update({
+            where: { id: parseInt(req.params.id) },
+            data: req.body
+        });
+        res.json({ success: true, data: order });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+/* =========================
+   📅 CALENDAR
+========================= */
+
+app.get('/api/calendar', async (req, res) => {
+    try {
+        const events = await prisma.calendarEvent.findMany({
+            orderBy: { date: 'asc' }
+        });
+        res.json({ success: true, data: events });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+app.post('/api/calendar', auth, async (req, res) => {
+    try {
+        const event = await prisma.calendarEvent.create({
+            data: {
+                ...req.body,
+                date: new Date(req.body.date)
+            }
+        });
+        res.json({ success: true, data: event });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+app.put('/api/calendar/:id', auth, async (req, res) => {
+    try {
+        const event = await prisma.calendarEvent.update({
+            where: { id: parseInt(req.params.id) },
+            data: {
+                ...req.body,
+                date: req.body.date ? new Date(req.body.date) : undefined
+            }
+        });
+        res.json({ success: true, data: event });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+app.delete('/api/calendar/:id', auth, async (req, res) => {
+    try {
+        await prisma.calendarEvent.delete({
+            where: { id: parseInt(req.params.id) }
+        });
+        res.json({ success: true, message: "Event deleted" });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
 });
 
 
@@ -716,6 +1108,79 @@ app.delete('/api/notices/:id', auth, async (req, res) => {
     }
 });
 
+
+/* =========================
+   📄 PAGES (CMS)
+========================= */
+
+app.get('/api/pages', async (req, res) => {
+    try {
+        const pages = await prisma.page.findMany({
+            orderBy: { lastModified: 'desc' }
+        });
+        res.json({ success: true, data: pages });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+app.get('/api/pages/:id', async (req, res) => {
+    try {
+        const page = await prisma.page.findUnique({
+            where: { id: parseInt(req.params.id) }
+        });
+        if (!page) return res.status(404).json({ success: false, message: "Page not found" });
+        res.json({ success: true, data: page });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+app.post('/api/pages', auth, async (req, res) => {
+    try {
+        const page = await prisma.page.create({
+            data: req.body
+        });
+        res.json({ success: true, data: page });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+app.put('/api/pages/:id', auth, async (req, res) => {
+    try {
+        const page = await prisma.page.update({
+            where: { id: parseInt(req.params.id) },
+            data: req.body
+        });
+        res.json({ success: true, data: page });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+app.delete('/api/pages/:id', auth, async (req, res) => {
+    try {
+        await prisma.page.delete({
+            where: { id: parseInt(req.params.id) }
+        });
+        res.json({ success: true, message: "Page deleted" });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+app.get('/api/pages/slug/:slug', async (req, res) => {
+    try {
+        const page = await prisma.page.findUnique({
+            where: { slug: req.params.slug }
+        });
+        if (!page) return res.status(404).json({ success: false, message: "Page not found" });
+        res.json({ success: true, data: page });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
 
 /* =========================
    🚀 START SERVER

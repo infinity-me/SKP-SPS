@@ -2,9 +2,6 @@ import axios from 'axios';
 
 const api = axios.create({
     baseURL: 'http://localhost:5000/api',
-    headers: {
-        'Content-Type': 'application/json',
-    },
 });
 
 
@@ -71,6 +68,22 @@ export const authService = {
         }
         return res.data;
     },
+    updateProfile: async (data: any) => {
+        const res = await api.put('/auth/profile', data);
+        if (res.data?.user) {
+            localStorage.setItem("user", JSON.stringify(res.data.user));
+        }
+        return res.data;
+    },
+    uploadAvatar: async (file: File) => {
+        const formData = new FormData();
+        formData.append('avatar', file);
+        const res = await api.post('/auth/upload-avatar', formData);
+        if (res.data?.user) {
+            localStorage.setItem("user", JSON.stringify(res.data.user));
+        }
+        return res.data;
+    }
 };
 
 
@@ -115,6 +128,23 @@ export const feeService = {
     getAll: () => api.get('/fees'),
     getForStudent: (studentId: number) => api.get(`/fees?studentId=${studentId}`),
     create: (data: any) => api.post('/fees', data),
+    update: (id: number, data: any) => api.put(`/fees/${id}`, data),
+    delete: (id: number) => api.delete(`/fees/${id}`),
+    
+    // New automation methods
+    lookup: (admissionNo: string) => api.get(`/fees/lookup/${admissionNo}`),
+    pay: (feeId: number) => api.post(`/fees/pay/${feeId}`),
+    generate: (month: string, year: number) => api.post('/fees/generate', { month, year }),
+};
+
+
+/* ================= FEE STRUCTURE (NEW) ================= */
+
+export const feeStructureService = {
+    getAll: () => api.get('/fee-structure'),
+    create: (data: any) => api.post('/fee-structure', data),
+    update: (id: number, data: any) => api.put(`/fee-structure/${id}`, data),
+    delete: (id: number) => api.delete(`/fee-structure/${id}`),
 };
 
 
@@ -165,6 +195,16 @@ export const orderService = {
 };
 
 
+/* ================= CALENDAR ================= */
+
+export const calendarService = {
+    getAll: () => api.get('/calendar'),
+    create: (data: any) => api.post('/calendar', data),
+    update: (id: number, data: any) => api.put(`/calendar/${id}`, data),
+    delete: (id: number) => api.delete(`/calendar/${id}`),
+};
+
+
 /* ================= ANALYTICS ================= */
 
 export const analyticsService = {
@@ -189,6 +229,18 @@ export const noticeService = {
     create: (data: any) => api.post('/notices', data),
     update: (id: number, data: any) => api.put(`/notices/${id}`, data),
     remove: (id: number) => api.delete(`/notices/${id}`),
+};
+
+
+/* ================= PAGES (CMS) ================= */
+
+export const pageService = {
+    getAll: () => api.get('/pages'),
+    getById: (id: number) => api.get(`/pages/${id}`),
+    getBySlug: (slug: string) => api.get(`/pages/slug/${slug}`),
+    create: (data: any) => api.post('/pages', data),
+    update: (id: number, data: any) => api.put(`/pages/${id}`, data),
+    delete: (id: number) => api.delete(`/pages/${id}`),
 };
 
 

@@ -25,7 +25,7 @@ export default function Hero() {
                 <div className="absolute inset-0 bg-gradient-to-t from-primary via-transparent to-primary/30 z-10" />
             </motion.div>
 
-            <div className="relative z-20 max-w-7xl mx-auto px-6 w-full pt-32 mt-10 md:mt-0">
+            <div className="relative z-20 max-w-7xl mx-auto px-6 w-full pt-16 md:mt-20 lg:mt-0">
                 <div className="max-w-2xl">
                     <motion.div
                         initial={{ opacity: 0, y: 20 }}
@@ -44,13 +44,19 @@ export default function Hero() {
                         </p>
 
                         <div className="flex flex-wrap gap-4">
-                            <motion.button
-                                whileHover={{ scale: 1.05 }}
-                                whileTap={{ scale: 0.95 }}
-                                className="px-8 py-4 bg-gold-500 text-primary rounded-xl font-bold text-lg flex items-center gap-2 shadow-[0_10px_30px_rgba(212,175,55,0.4)] transition-all"
+                            <a 
+                                href="https://www.google.com/maps/place/SKP+Sainik+Public+School+Manihari/@26.3237066,83.8933234,17z/data=!3m1!4b1!4m6!3m5!1s0x399235e9c9453875:0xc29ad69e63ba0392!8m2!3d26.3237066!4d83.8958983!16s%2Fg%2F11k4rwzbh3?entry=ttu&g_ep=EgoyMDI2MDQwNS4wIKXMDSoASAFQAw%3D%3D"
+                                target="_blank"
+                                rel="noopener noreferrer"
                             >
-                                Inquire Now <ArrowRight size={20} />
-                            </motion.button>
+                                <motion.button
+                                    whileHover={{ scale: 1.05 }}
+                                    whileTap={{ scale: 0.95 }}
+                                    className="px-8 py-4 bg-gold-500 text-primary rounded-xl font-bold text-lg flex items-center gap-2 shadow-[0_10px_30px_rgba(212,175,55,0.4)] transition-all"
+                                >
+                                    Inquire Now <ArrowRight size={20} />
+                                </motion.button>
+                            </a>
                             <motion.button
                                 whileHover={{ scale: 1.05 }}
                                 whileTap={{ scale: 0.95 }}

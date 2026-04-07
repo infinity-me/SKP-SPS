@@ -8,11 +8,11 @@ export default function PublicLayout({
 }>) {
   return (
     <>
-      <header className="fixed top-0 left-0 right-0 z-50">
+      <header className="fixed top-0 left-0 right-0 z-50 flex flex-col bg-primary">
         <Navbar />
         <NoticeBar />
       </header>
-      <main>{children}</main>
+      <main className="pt-[80px]">{children}</main>
       <footer className="bg-primary text-white py-20 px-6 border-t border-gold-500/10">
         <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-4 gap-12">
           <div className="col-span-1 md:col-span-2">
