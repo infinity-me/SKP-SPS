@@ -395,7 +395,7 @@ app.post('/api/auth/upload-avatar', auth, (req, res, next) => {
     try {
         if (!req.file) return res.status(400).json({ message: "No file received" });
         
-        const avatarUrl = `http://localhost:5000/uploads/${req.file.filename}`;
+        const avatarUrl = `${process.env.BACKEND_URL || 'http://localhost:5000'}/uploads/${req.file.filename}`;
         
         // Update user profile record
         const updatedUser = await prisma.user.update({

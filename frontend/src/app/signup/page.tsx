@@ -178,6 +178,7 @@ function InputGroup({ label, placeholder, type = "text", icon, value, onChange }
                     placeholder={placeholder}
                     value={value}
                     onChange={onChange}
+                    className="w-full bg-slate-50 border border-slate-100 rounded-xl py-3 pl-12 pr-4 text-primary outline-none focus:ring-2 focus:ring-primary/5 focus:border-primary/20 focus:bg-white transition-all"
                 />
             </div>
         </div>
