@@ -1,12 +1,17 @@
-# SKP SAINIK PUBLIC SCHOOL - Web Portal
+# SKP Sainik Public School - Web Portal
 
-A comprehensive school management system featuring a modern frontend for students, parents, and teachers, and a dedicated backend for data management.
+![School Logo](scl%20logo.png)
 
-## 📁 Project Structure
+A comprehensive, premium School Management System designed for **SKP Sainik Public School**. This platform features a high-density, modern UI/UX and a robust backend for managing student identities, academic records, and financial transactions.
 
-- **/frontend**: Next.js application with Prisma/SQLite for UI-related data.
-- **/backend**: Express.js server using a JSON-based database for core business logic.
-- **database_schema.sql**: SQL reference for the system's data model.
+---
+
+## 🏗️ Technical Architecture
+
+- **Frontend**: Next.js 14+ (App Router), Tailwind CSS, Framer Motion, Lucide Icons, Axios.
+- **Backend**: Node.js, Express.js, Prisma ORM.
+- **Database**: PostgreSQL.
+- **Authentication**: JWT-based & Google OAuth2 integration.
 
 ---
 
@@ -15,63 +20,111 @@ A comprehensive school management system featuring a modern frontend for student
 Follow these steps to set up the project on your local machine.
 
 ### 1. Prerequisites
-- **Node.js** (v18 or higher recommended)
-- **npm** (comes with Node.js)
+- **Node.js** (v18.x or higher)
+- **npm** (v9.x or higher)
+- **PostgreSQL Instance** (Local or Cloud)
 
-### 2. Backend Setup
-The backend handles authentication, student records, and circulars using a lightweight JSON database.
-
+### 2. Repository Setup
 ```bash
-# Navigate to backend
-cd backend
-
-# Install dependencies
-npm install
-
-# Start the server
-node server.js
+git clone https://github.com/your-username/skp-school-web.git
+cd skp-school-web
 ```
-The backend will run on **http://localhost:5000**.
 
-> [!IMPORTANT]
-> **Initialize the Database**: After starting the backend, visit [http://localhost:5000/api/init](http://localhost:5000/api/init) in your browser to seed the initial admin user and sample data.
+### 3. Backend Configuration
+The backend handles the core logic and database communication.
 
-### 3. Frontend Setup
-The frontend provides the user interface and uses Prisma with SQLite for session and local data.
+1. **Install Dependencies**:
+   ```bash
+   cd backend
+   npm install
+   ```
+2. **Environment Setup**:
+   Create a `.env` file in the `/backend` directory and add the following:
+   ```env
+   # Database connection
+   DATABASE_URL="postgresql://user:password@localhost:5432/spsschool_db"
 
-```bash
-# Navigate to frontend (from root)
-cd ../frontend
+   # Security
+   JWT_SECRET="your_secure_random_key"
 
-# Install dependencies
-npm install
+   # Google OAuth (Get from Google Cloud Console)
+   GOOGLE_CLIENT_ID="your_google_client_id"
+   GOOGLE_CLIENT_SECRET="your_google_client_secret"
+   GOOGLE_CALLBACK_URL="http://localhost:5000/api/auth/google/callback"
 
-# Set up the database (if dev.db is missing)
-npx prisma generate
-npx prisma db push
+   # App URLs
+   FRONTEND_URL="http://localhost:3000"
+   BACKEND_URL="http://localhost:5000"
+   ```
+3. **Database Initialization**:
+   ```bash
+   npx prisma generate
+   npx prisma db push
+   ```
+4. **Start the Server**:
+   ```bash
+   npm run dev
+   ```
+   The backend will run on **http://localhost:5000**.
 
-# Start the development server
-npm run dev
-```
-The frontend will run on **http://localhost:3000**.
+### 4. Frontend Configuration
+The frontend provides the premium user experience for cadets and admins.
+
+1. **Install Dependencies**:
+   ```bash
+   cd ../frontend
+   npm install
+   ```
+2. **Start Development Server**:
+   ```bash
+   npm run dev
+   ```
+   The application will be available at **http://localhost:3000**.
 
 ---
 
-## 🛠️ Configuration
+## 🌟 Key Features
 
-### Environment Variables
-For the **frontend**, ensure you have a `.env` file in the `/frontend` directory:
-```env
-DATABASE_URL="file:./prisma/dev.db"
-```
-
-### Credentials (Post-Initialization)
-After running the `/api/init` route, you can log in with:
-- **Email**: `admin@skpsainik.edu.in`
-- **Password**: `password123`
-- **Role**: `admin`
+- **🛡️ Digital ID & Profile**: Automated digital identity cards for every cadet with instant profile picture updates.
+- **💰 Fee Management System**:
+  - Class-wise global fee structure configuration.
+  - Automated monthly fee generation for the entire student body.
+  - Multi-step secure public payment portal.
+- **📊 Admin Dashboard**: Real-time analytics for revenue, student attendance, and staff management.
+- **📰 Notice & Notice Board**: Dynamic, scrolling ticker for school-wide alerts and recent circulars.
+- **📁 Multimedia Gallery**: Categorized photo and video gallery manageble via the admin panel.
+- **🛍️ Stationery Store**: Integrated e-shop for school supplies and uniform items.
 
 ---
 
-## 📞 Support
-For any issues regarding setup, please contact the development team.
+## 📁 Directory Overview
+
+```text
+├── backend/
+│   ├── prisma/             # Database schema and migrations
+│   ├── uploads/            # Student and Staff profile pictures
+│   ├── server.js           # Main Express server logic
+│   └── .env                # Backend sensitive configuration
+├── frontend/
+│   ├── src/
+│   │   ├── app/            # Next.js App Router pages
+│   │   ├── components/     # High-end UI components
+│   │   └── lib/            # API services and global utilities
+│   └── tailwind.config.ts  # Visual theme and tokens
+└── README.md
+```
+
+---
+
+## 🛡️ Security & Roles
+- **Admin**: Full access to finance, student data, and site content.
+- **Teacher**: Access to attendance management and academic results.
+- **Student (Cadet)**: Access to personal digital ID, fee history, and result cards.
+- **Guest**: Access to admissions, fee structure, and school information.
+
+---
+
+## 📞 Support & Maintenance
+For any technical issues or feature requests, contact the development team at [support@skpschool.com](mailto:support@skpschool.com).
+
+*Built with ❤️ for SKP Sainik Public School.*
