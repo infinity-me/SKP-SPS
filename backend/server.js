@@ -463,11 +463,14 @@ app.post('/api/students', auth, async (req, res) => {
         
         const hashedPassword = await bcrypt.hash("student123", 10);
         
+        // Handle empty string for phone to avoid unique constraint violations
+        const finalPhone = phone && phone.trim() !== "" ? phone.trim() : null;
+
         const user = await prisma.user.create({
             data: {
                 name: `${firstName} ${lastName}`,
                 email: `student_${admissionNo}@skpschool.com`,
-                phone,
+                phone: finalPhone,
                 password: hashedPassword,
                 role: "student",
                 studentProfile: {
@@ -484,16 +487,47 @@ app.post('/api/students', auth, async (req, res) => {
 
         res.json({ success: true, data: user.studentProfile });
     } catch (err) {
+        console.error("Student create error:", err);
         res.status(500).json({ error: err.message });
     }
 });
 
 app.put('/api/students/:id', auth, async (req, res) => {
-    const student = await prisma.student.update({
-        where: { id: parseInt(req.params.id) },
-        data: req.body
-    });
-    res.json({ success: true, data: student });
+    try {
+        const { admissionNo, class: className, section, parentName, phone, firstName, lastName } = req.body;
+        
+        const studentId = parseInt(req.params.id);
+        const finalPhone = phone && phone.trim() !== "" ? phone.trim() : null;
+        
+        // Update the student fields
+        const student = await prisma.student.update({
+            where: { id: studentId },
+            data: {
+                admissionNo,
+                class: className,
+                section,
+                parentName
+            },
+            include: { user: true }
+        });
+        
+        // Optionally update the linked user details if needed
+        if (student.userId && (firstName || lastName || finalPhone)) {
+            const updateName = (firstName && lastName) ? `${firstName} ${lastName}` : student.user.name;
+            await prisma.user.update({
+                where: { id: student.userId },
+                data: {
+                    name: updateName,
+                    phone: finalPhone
+                }
+            });
+        }
+        
+        res.json({ success: true, data: student });
+    } catch (err) {
+        console.error("Student update error:", err);
+        res.status(500).json({ error: err.message });
+    }
 });
 
 app.delete('/api/students/:id', auth, async (req, res) => {

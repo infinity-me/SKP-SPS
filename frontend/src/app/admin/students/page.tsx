@@ -68,7 +68,22 @@ export default function StudentsPage() {
     const openModal = (student: any = null) => {
         if (student) {
             setEditingStudent(student)
-            setFormData({ ...student })
+            
+            // Extract first and last name from user.name if available
+            let fName = "";
+            let lName = "";
+            if (student.user && student.user.name) {
+                const nameParts = student.user.name.split(" ");
+                fName = nameParts[0];
+                lName = nameParts.slice(1).join(" ");
+            }
+            
+            setFormData({ 
+                ...student,
+                firstName: fName,
+                lastName: lName,
+                phone: student.user?.phone || ""
+            })
         } else {
             setEditingStudent(null)
             setFormData({ firstName: "", lastName: "", admissionNo: "", class: "", section: "", parentName: "", phone: "" })
