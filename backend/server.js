@@ -28,13 +28,8 @@ if (!fs.existsSync(uploadsDir)) {
 app.use('/uploads', express.static(uploadsDir));
 
 // 📁 Multer Config for Avatar Uploads
-const storage = multer.diskStorage({
-    destination: (req, file, cb) => cb(null, 'uploads/'),
-    filename: (req, file, cb) => {
-        const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-        cb(null, 'avatar-' + uniqueSuffix + path.extname(file.originalname));
-    }
-});
+// Use memory storage to store files in Postgres DB instead of ephemeral local disk
+const storage = multer.memoryStorage();
 const upload = multer({ 
     storage,
     limits: { fileSize: 5 * 1024 * 1024 }, // 5MB limit
@@ -397,7 +392,9 @@ app.post('/api/auth/upload-avatar', auth, (req, res, next) => {
     try {
         if (!req.file) return res.status(400).json({ message: "No file received" });
         
-        const avatarUrl = `${process.env.BACKEND_URL || 'http://localhost:5000'}/uploads/${req.file.filename}`;
+        // Convert image buffer to DataURI so it can be stored persistently in Neon Postgres
+        const base64Image = req.file.buffer.toString('base64');
+        const avatarUrl = `data:${req.file.mimetype};base64,${base64Image}`;
         
         // Update user profile record
         const updatedUser = await prisma.user.update({
