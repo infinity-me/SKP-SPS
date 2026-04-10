@@ -17,9 +17,9 @@ export const metadata: Metadata = {
   title: "SKP SAINIK PUBLIC SCHOOL | Manihari, Uttar Pradesh",
   description: "Premier educational institution in Manihari, Uttar Pradesh, India. Nurturing excellence and building futures.",
   icons: {
-    icon: "/favicon.ico",
-    shortcut: "/favicon.ico",
-    apple: "/favicon.ico",
+    icon: "/favicon2.ico",
+    shortcut: "/favicon2.ico",
+    apple: "/favicon2.ico",
   },
 };
 
