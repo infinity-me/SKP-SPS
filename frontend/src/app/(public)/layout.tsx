@@ -1,5 +1,6 @@
 import Navbar from "@/components/Navbar";
 import NoticeBar from "@/components/NoticeBar";
+import HomePopup from "@/components/HomePopup";
 
 export default function PublicLayout({
   children,
@@ -8,6 +9,7 @@ export default function PublicLayout({
 }>) {
   return (
     <>
+      <HomePopup />
       <header className="fixed top-0 left-0 right-0 z-50 flex flex-col bg-primary">
         <Navbar />
         <NoticeBar />

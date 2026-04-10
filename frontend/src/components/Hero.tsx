@@ -44,7 +44,7 @@ export default function Hero() {
                         </p>
 
                         <div className="flex flex-wrap gap-4">
-                            <a 
+                            <a
                                 href="https://www.google.com/maps/place/SKP+Sainik+Public+School+Manihari/@26.3237066,83.8933234,17z/data=!3m1!4b1!4m6!3m5!1s0x399235e9c9453875:0xc29ad69e63ba0392!8m2!3d26.3237066!4d83.8958983!16s%2Fg%2F11k4rwzbh3?entry=ttu&g_ep=EgoyMDI2MDQwNS4wIKXMDSoASAFQAw%3D%3D"
                                 target="_blank"
                                 rel="noopener noreferrer"

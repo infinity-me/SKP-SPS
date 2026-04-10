@@ -1,7 +1,7 @@
 "use client"
 
 import Link from "next/link"
-import { usePathname } from "next/navigation"
+import { usePathname, useRouter } from "next/navigation"
 import { cn } from "@/lib/utils"
 import {
     LayoutDashboard,
@@ -45,12 +45,20 @@ const menuItems = [
     {
         group: "System", items: [
             { name: "Settings", href: "/admin/settings", icon: <Settings size={18} /> },
+            { name: "Start Popup", href: "/admin/popup", icon: <ImageIcon size={18} /> },
         ]
     }
 ]
 
 export default function AdminSidebar() {
     const pathname = usePathname()
+    const router = useRouter()
+
+    const handleSignOut = () => {
+        localStorage.removeItem("token")
+        localStorage.removeItem("user")
+        router.push("/login?role=admin")
+    }
 
     return (
         <aside className="w-64 h-screen bg-white border-r border-slate-100 flex flex-col fixed left-0 top-0 z-40">
@@ -92,7 +100,10 @@ export default function AdminSidebar() {
             </div>
 
             <div className="p-4 border-t border-slate-50">
-                <button className="w-full flex items-center gap-3 px-4 py-3 text-sm font-bold text-red-500 hover:bg-red-50 rounded-xl transition-all">
+                <button
+                    onClick={handleSignOut}
+                    className="w-full flex items-center gap-3 px-4 py-3 text-sm font-bold text-red-500 hover:bg-red-50 rounded-xl transition-all"
+                >
                     <LogOut size={18} />
                     Sign Out
                 </button>

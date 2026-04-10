@@ -1217,6 +1217,60 @@ app.get('/api/pages/slug/:slug', async (req, res) => {
 });
 
 /* =========================
+   📢 POPUP SETTINGS
+========================= */
+
+app.get('/api/settings/popup', async (req, res) => {
+    try {
+        let popup = await prisma.popupSetting.findUnique({
+            where: { id: 1 }
+        });
+        
+        if (!popup) {
+            // Create default if it doesn't exist
+            popup = await prisma.popupSetting.create({
+                data: {
+                    id: 1,
+                    isActive: true,
+                    title: "Admissions Open",
+                    subtitle: "For Session 2026-2027",
+                    buttonText: "Apply Now",
+                    buttonLink: "/admission",
+                    images: []
+                }
+            });
+        }
+        res.json({ success: true, data: popup });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+app.put('/api/settings/popup', auth, async (req, res) => {
+    try {
+        const { isActive, title, subtitle, buttonText, buttonLink, images } = req.body;
+        
+        const popup = await prisma.popupSetting.upsert({
+            where: { id: 1 },
+            update: { isActive, title, subtitle, buttonText, buttonLink, images },
+            create: {
+                id: 1,
+                isActive,
+                title,
+                subtitle,
+                buttonText,
+                buttonLink,
+                images
+            }
+        });
+        
+        res.json({ success: true, data: popup });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+/* =========================
    🚀 START SERVER
 ========================= */
 

@@ -243,5 +243,11 @@ export const pageService = {
     delete: (id: number) => api.delete(`/pages/${id}`),
 };
 
+/* ================= POPUP SETTINGS ================= */
+
+export const popupService = {
+    get: () => api.get('/settings/popup'),
+    update: (data: any) => api.put('/settings/popup', data),
+};
 
 export default api;

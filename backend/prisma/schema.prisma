@@ -180,3 +180,14 @@ model Page {
   lastModified DateTime @updatedAt
   createdAt    DateTime @default(now())
 }
+
+model PopupSetting {
+  id         Int      @id @default(1)
+  isActive   Boolean  @default(true)
+  title      String   @default("Admissions Open")
+  subtitle   String   @default("For Session 2026-2027")
+  buttonText String   @default("Apply Now")
+  buttonLink String   @default("/admission")
+  images     Json     // Will store an array of base64 image strings or URLs
+  updatedAt  DateTime @updatedAt
+}

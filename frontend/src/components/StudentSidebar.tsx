@@ -1,7 +1,7 @@
 "use client"
 
 import Link from "next/link"
-import { usePathname } from "next/navigation"
+import { usePathname, useRouter } from "next/navigation"
 import { cn } from "@/lib/utils"
 import {
     LayoutDashboard,
@@ -42,6 +42,13 @@ const studentMenuItems = [
 
 export default function StudentSidebar() {
     const pathname = usePathname()
+    const router = useRouter()
+
+    const handleSignOut = () => {
+        localStorage.removeItem("token")
+        localStorage.removeItem("user")
+        router.push("/login")
+    }
 
     return (
         <aside className="w-64 h-screen bg-slate-900 border-r border-white/5 flex flex-col fixed left-0 top-0 z-40 text-white">
@@ -83,7 +90,10 @@ export default function StudentSidebar() {
             </div>
 
             <div className="p-4 border-t border-white/5">
-                <button className="w-full flex items-center gap-3 px-4 py-3 text-sm font-bold text-white/40 hover:text-white hover:bg-white/5 rounded-xl transition-all">
+                <button
+                    onClick={handleSignOut}
+                    className="w-full flex items-center gap-3 px-4 py-3 text-sm font-bold text-white/40 hover:text-white hover:bg-white/5 rounded-xl transition-all"
+                >
                     <LogOut size={18} />
                     Sign Out
                 </button>
