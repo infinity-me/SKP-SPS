@@ -14,7 +14,7 @@ export default function PublicLayout({
         <Navbar />
         <NoticeBar />
       </header>
-      <main className="pt-[80px]">{children}</main>
+      <main className="pt-[80px] md:pt-[100px]">{children}</main>
       <footer className="bg-primary text-white py-20 px-6 border-t border-gold-500/10">
         <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-4 gap-12">
           <div className="col-span-1 md:col-span-2">

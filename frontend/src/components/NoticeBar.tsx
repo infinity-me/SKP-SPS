@@ -43,11 +43,11 @@ export default function NoticeBar() {
 
             {/* LEFT LABEL CHIP — e.g. "NOTICE" */}
             <div
-                className={`flex items-center gap-2 px-4 shrink-0 font-black text-[11px] uppercase tracking-widest select-none ${cfg.label}`}
-                style={{ minWidth: "110px" }}
+                className={`flex items-center gap-2 px-3 md:px-4 shrink-0 font-black text-[10px] md:text-[11px] uppercase tracking-widest select-none ${cfg.label}`}
+                style={{ minWidth: "fit-content" }}
             >
-                <Megaphone size={13} className="shrink-0" />
-                Notice
+                <Megaphone size={12} className="shrink-0" />
+                <span className="hidden xs:inline">Notice</span>
             </div>
 
             {/* DIVIDER */}

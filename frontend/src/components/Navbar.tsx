@@ -54,13 +54,13 @@ export default function Navbar() {
     return (
         <nav
             className={cn(
-                "transition-all duration-300 px-6 py-4 relative z-50",
-                "bg-primary/95 backdrop-blur-md border-b border-gold-500/20 py-3 shadow-lg"
+                "transition-all duration-300 px-4 md:px-6 py-4 relative z-50",
+                "bg-primary/95 backdrop-blur-md border-b border-gold-500/20 py-2 md:py-3 shadow-lg"
             )}
         >
             <div className="max-w-7xl mx-auto flex items-center justify-between">
-                <Link href="/" className="flex items-center gap-3">
-                    <div className="relative w-10 h-10 md:w-12 md:h-12 bg-white rounded-full p-1 overflow-hidden">
+                <Link href="/" className="flex items-center gap-2 md:gap-3">
+                    <div className="relative w-8 h-8 md:w-12 md:h-12 bg-white rounded-full p-1 overflow-hidden shrink-0">
                         <Image
                             src="/images/logo.png"
                             alt="SKP School Logo"
@@ -68,9 +68,9 @@ export default function Navbar() {
                             className="object-contain"
                         />
                     </div>
-                    <div className="hidden sm:block">
-                        <h1 className="text-white font-heading font-black text-xs md:text-sm tracking-tighter leading-tight italic uppercase">
-                            <span className="text-sm md:text-base tracking-normal not-italic font-black">SKP SAINIK</span> <br />
+                    <div className="block">
+                        <h1 className="text-white font-heading font-black text-[10px] sm:text-xs md:text-sm tracking-tighter leading-tight italic uppercase">
+                            <span className="text-[11px] sm:text-sm md:text-base tracking-normal not-italic font-black">SKP SAINIK</span> <br />
                             <span className="text-gold-500 font-bold not-italic tracking-normal">PUBLIC SCHOOL</span>
                         </h1>
                     </div>
