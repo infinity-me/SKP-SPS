@@ -42,7 +42,7 @@ router.post('/', async (req, res) => {
         }
 
         const genAI = new GoogleGenerativeAI(apiKey);
-        const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
+        const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash-lite" });
 
         // 3. Build Base System Prompt
         const systemPrompt = `
@@ -93,9 +93,9 @@ ${dbContext || "No recent updates available at the moment."}
                 responseText = response.text();
             }
         } catch (genErr) {
-            console.warn("Primary model (gemini-2.5-flash) failed, trying fallback...", genErr.message);
+            console.warn("Primary model (gemini-2.5-flash-lite) failed, trying fallback...", genErr.message);
             try {
-                const fallbackModel = genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
+                const fallbackModel = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
                 const fallbackResult = await fallbackModel.generateContent(fullPrompt);
                 const fallbackResponse = await fallbackResult.response;
                 responseText = fallbackResponse.text();
