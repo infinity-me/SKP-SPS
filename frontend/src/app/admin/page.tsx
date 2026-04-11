@@ -88,7 +88,7 @@ export default function AdminDashboard() {
             </div>
 
             {/* Stats Grid */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
                 {[
                     { label: "Total Students", value: students.length.toString(), change: "+12%", trendingUp: true, icon: <Users className="text-blue-500" /> },
                     { label: "Active Teachers", value: "86", change: "+2", trendingUp: true, icon: <UserCheck className="text-green-500" /> },
@@ -121,8 +121,8 @@ export default function AdminDashboard() {
             </div>
 
             {/* Analytics Row */}
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                <div className="lg:col-span-2 bg-white p-8 rounded-3xl border border-slate-100 shadow-sm">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 md:gap-8">
+                <div className="lg:col-span-2 bg-white p-4 md:p-8 rounded-2xl md:rounded-3xl border border-slate-100 shadow-sm">
                     <div className="flex items-center justify-between mb-8">
                         <h3 className="font-heading font-bold text-primary">Fee Collection Trends</h3>
                         <select className="bg-slate-50 border-none rounded-lg text-xs font-bold text-slate-400 px-3 py-1 outline-none">
@@ -161,7 +161,7 @@ export default function AdminDashboard() {
                     </div>
                 </div>
 
-                <div className="bg-primary p-8 rounded-3xl shadow-xl shadow-primary/20 relative overflow-hidden flex flex-col justify-between">
+                <div className="bg-primary p-6 md:p-8 rounded-2xl md:rounded-3xl shadow-xl shadow-primary/20 relative overflow-hidden flex flex-col justify-between">
                     <div className="relative z-10">
                         <UserPlus className="text-gold-500 mb-6" size={48} />
                         <h3 className="text-2xl font-heading font-black text-white leading-tight mb-4">
@@ -184,8 +184,8 @@ export default function AdminDashboard() {
             </div>
 
             {/* Recent Activity Table */}
-            <div className="bg-white rounded-3xl border border-slate-100 shadow-sm overflow-hidden">
-                <div className="p-8 border-b border-slate-50 flex items-center justify-between">
+            <div className="bg-white rounded-2xl md:rounded-3xl border border-slate-100 shadow-sm overflow-hidden">
+                <div className="p-4 md:p-8 border-b border-slate-50 flex items-center justify-between">
                     <h3 className="font-heading font-bold text-primary">Recent Admissions</h3>
                     <Link href="/admin/admission" className="text-xs font-bold text-gold-500 hover:text-gold-400 uppercase tracking-widest decoration-transparent">View All</Link>
                 </div>

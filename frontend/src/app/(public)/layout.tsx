@@ -1,6 +1,7 @@
 import Navbar from "@/components/Navbar";
 import NoticeBar from "@/components/NoticeBar";
 import HomePopup from "@/components/HomePopup";
+import ChatWidget from "@/components/ChatWidget";
 
 export default function PublicLayout({
   children,
@@ -20,7 +21,16 @@ export default function PublicLayout({
           <div className="col-span-1 md:col-span-2">
             <h2 className="text-2xl font-heading font-bold mb-6">SKP SAINIK <span className="text-gold-500">PUBLIC SCHOOL</span></h2>
             <p className="text-white/60 max-w-sm mb-6">
-              Manihari Village, Uttar Pradesh, India. <br />
+              <a 
+                href="https://www.google.com/maps/search/?api=1&query=SKP+Sainik+Public+School+Manihari+Deoria" 
+                target="_blank" 
+                rel="noopener noreferrer" 
+                className="hover:text-gold-500 transition-colors"
+                title="View on Google Maps"
+              >
+                Manihari Village, Uttar Pradesh, India.
+              </a>
+              <br />
               Dedicated to academic excellence and character building.
             </p>
           </div>
@@ -37,8 +47,8 @@ export default function PublicLayout({
           <div>
             <h3 className="font-heading font-semibold text-gold-500 mb-4">Contact</h3>
             <p className="text-white/70">
-              Email: info@skpschool.com <br />
-              Phone: +91 000 000 0000
+              Email: <a href="mailto:skpspsmanihari09@gmail.com" className="hover:text-gold-500 transition-colors">skpspsmanihari09@gmail.com</a> <br />
+              Phone: <a href="tel:9454331861" className="hover:text-gold-500 transition-colors">9454331861</a>, <a href="tel:8449790561" className="hover:text-gold-500 transition-colors">8449790561</a>
             </p>
           </div>
         </div>
@@ -46,6 +56,7 @@ export default function PublicLayout({
           © {new Date().getFullYear()} SKP SAINIK PUBLIC SCHOOL. All rights reserved.
         </div>
       </footer>
+      <ChatWidget />
     </>
   );
 }

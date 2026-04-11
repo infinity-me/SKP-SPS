@@ -22,7 +22,14 @@ import {
   MapPin,
   Phone,
   Mail,
+  Calendar,
+  Clock,
+  ExternalLink,
 } from "lucide-react";
+import { publicDataService } from "@/lib/api";
+import { cn } from "@/lib/utils";
+import NoticeTicker from "@/components/NoticeTicker";
+import { useState, useEffect } from "react";
 
 const fadeUp = {
   initial: { opacity: 0, y: 40 },
@@ -32,16 +39,54 @@ const fadeUp = {
 };
 
 export default function Home() {
+  const [stats, setStats] = useState({ students: 600, teachers: 25 });
+  const [feed, setFeed] = useState<{notices: any[], events: any[]}>({ notices: [], events: [] });
+  const [photos, setPhotos] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchHomeData = async () => {
+      try {
+        const [statsRes, noticeRes, eventRes, photoRes] = await Promise.all([
+          publicDataService.getStats(),
+          publicDataService.getNotices(),
+          publicDataService.getUpcomingEvents(),
+          publicDataService.getRecentPhotos()
+        ]);
+        
+        if (statsRes.data?.data) {
+          setStats({
+            students: (statsRes.data.data.students || 0) + 500, // Premium boost
+            teachers: (statsRes.data.data.teachers || 0) >= 25 ? statsRes.data.data.teachers : 25
+          });
+        }
+        
+        setFeed({
+          notices: noticeRes.data?.data || [],
+          events: eventRes.data?.data || []
+        });
+        
+        setPhotos(photoRes.data?.data || []);
+      } catch (err) {
+        console.error("Home page data fetch failed:", err);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    fetchHomeData();
+  }, []);
+
   return (
     <>
+      <NoticeTicker />
       <Hero />
 
       {/* ─── Stats Bar ─────────────────────────────── */}
       <section className="bg-primary py-10 px-6 border-b border-gold-500/10">
         <div className="max-w-6xl mx-auto grid grid-cols-2 md:grid-cols-4 gap-8">
           {[
-            { value: "600+", label: "Students Enrolled", icon: <Users size={22} className="text-gold-500" /> },
-            { value: "25+", label: "Expert Faculty", icon: <GraduationCap size={22} className="text-gold-500" /> },
+            { value: `${stats.students}+`, label: "Students Enrolled", icon: <Users size={22} className="text-gold-500" /> },
+            { value: `${stats.teachers}+`, label: "Expert Faculty", icon: <GraduationCap size={22} className="text-gold-500" /> },
             { value: "100%", label: "Board Pass Rate", icon: <Trophy size={22} className="text-gold-500" /> },
             { value: "15+", label: "Years of Excellence", icon: <Star size={22} className="text-gold-500" /> },
           ].map((stat, i) => (
@@ -229,6 +274,116 @@ export default function Home() {
         </div>
       </section>
 
+      {/* ─── Live Campus Feed ─────────────────────── */}
+      <section className="py-24 px-6 bg-white border-y border-slate-100">
+        <div className="max-w-7xl mx-auto">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-20">
+            {/* Notices Hub */}
+            <div>
+              <div className="flex items-center justify-between mb-10">
+                <div>
+                  <h2 className="text-3xl font-heading font-black text-primary">Live Announcements</h2>
+                  <div className="h-1.5 w-12 bg-gold-500 mt-3 rounded-full" />
+                </div>
+                <Link href="/circulars" className="text-gold-600 font-bold text-sm hover:underline">View All</Link>
+              </div>
+
+              <div className="space-y-4">
+                {feed.notices.length > 0 ? feed.notices.map((notice, i) => (
+                  <motion.div 
+                    key={i}
+                    whileHover={{ x: 5 }}
+                    className="p-6 bg-slate-50 border border-slate-100 rounded-3xl flex items-start gap-4 group cursor-pointer hover:bg-white hover:shadow-xl transition-all"
+                  >
+                    <div className="w-12 h-12 bg-primary text-white flex items-center justify-center text-lg font-bold rounded-2xl group-hover:bg-gold-500 transition-colors">
+                      {new Date(notice.date).getDate()}
+                    </div>
+                    <div className="flex-grow">
+                      <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">{new Date(notice.date).toLocaleString('default', { month: 'short', year: 'numeric' })}</p>
+                      <h4 className="font-bold text-primary group-hover:text-gold-600 transition-colors">{notice.title}</h4>
+                      <p className="text-xs text-muted-foreground line-clamp-1 mt-1">{notice.message}</p>
+                    </div>
+                  </motion.div>
+                )) : (
+                  <p className="text-slate-400 italic">No new announcements at the moment.</p>
+                )}
+              </div>
+            </div>
+
+            {/* Calendar Hub */}
+            <div>
+              <div className="flex items-center justify-between mb-10">
+                <div>
+                  <h2 className="text-3xl font-heading font-black text-primary">Upcoming Events</h2>
+                  <div className="h-1.5 w-12 bg-primary mt-3 rounded-full" />
+                </div>
+                <Link href="/calendar" className="text-primary font-bold text-sm hover:underline">Full Calendar</Link>
+              </div>
+
+              <div className="space-y-4">
+                {feed.events.length > 0 ? feed.events.map((event, i) => (
+                  <motion.div 
+                    key={i}
+                    className="p-6 border border-slate-100 rounded-3xl flex items-center gap-6 group hover:border-primary/20 transition-all"
+                  >
+                    <div className="flex flex-col items-center justify-center w-16 h-16 bg-slate-50 rounded-2xl font-black text-primary border border-slate-200">
+                      <span className="text-xl leading-none">{new Date(event.date).getDate()}</span>
+                      <span className="text-[10px] uppercase">{new Date(event.date).toLocaleString('default', { month: 'short' })}</span>
+                    </div>
+                    <div className="flex-grow">
+                      <h4 className="font-bold text-primary text-lg">{event.title}</h4>
+                      <div className="flex items-center gap-4 mt-2">
+                        <span className="flex items-center gap-1.5 text-xs text-muted-foreground"><Clock size={14} /> {new Date(event.date).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                        <span className="flex items-center gap-1.5 text-xs text-muted-foreground"><MapPin size={14} /> Campus</span>
+                      </div>
+                    </div>
+                    <Calendar className="text-primary/10 group-hover:text-primary/40 transition-colors" size={32} />
+                  </motion.div>
+                )) : (
+                  <p className="text-slate-400 italic">No scheduled events for the near future.</p>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ─── Recent Highlights ─────────────────────── */}
+      <section className="py-24 px-6 bg-[#0A192F] relative overflow-hidden">
+        <div className="max-w-7xl mx-auto relative z-10">
+          <div className="flex flex-col md:flex-row md:items-end justify-between gap-10 mb-16">
+            <div className="max-w-xl">
+              <span className="text-gold-500 font-bold uppercase tracking-[.3em] text-xs">Visual Journey</span>
+              <h2 className="text-4xl md:text-5xl font-heading font-black text-white mt-4">Campus Highlights</h2>
+              <p className="text-white/40 mt-4 text-lg">Glimpses of life at SKP — where every moment is a step towards greatness.</p>
+            </div>
+            <Link href="/gallery" className="px-8 py-3 bg-white/5 border border-white/10 text-white font-bold rounded-xl hover:bg-white/10 transition-all flex items-center gap-3">
+              Browse Gallery <ExternalLink size={18} />
+            </Link>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+            {photos.length > 0 ? photos.map((photo, i) => (
+              <motion.div 
+                key={i}
+                whileHover={{ y: -10 }}
+                className="aspect-square relative rounded-3xl overflow-hidden group cursor-pointer"
+              >
+                <img src={photo.url} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" alt="Highlight" />
+                <div className="absolute inset-0 bg-gradient-to-t from-primary to-transparent opacity-0 group-hover:opacity-60 transition-opacity duration-500" />
+                <div className="absolute bottom-6 left-6 right-6 translate-y-4 opacity-0 group-hover:translate-y-0 group-hover:opacity-100 transition-all duration-500">
+                  <p className="text-white font-bold text-lg">{photo.title || "Campus Life"}</p>
+                </div>
+              </motion.div>
+            )) : (
+              [1, 2, 3].map((_, i) => (
+                <div key={i} className="aspect-square bg-white/5 rounded-3xl animate-pulse" />
+              ))
+            )}
+          </div>
+        </div>
+      </section>
+
       {/* ─── CTA Banner ──────────────────────────────── */}
       <section className="relative py-16 md:py-28 px-6 overflow-hidden">
         <div className="absolute inset-0 bg-primary" />
@@ -327,20 +482,20 @@ export default function Home() {
             <p className="text-muted-foreground">Reach out to us anytime. We're happy to help.</p>
           </div>
           <div className="flex flex-wrap gap-6">
-            <a href="tel:+91000000000" className="flex items-center gap-3 text-primary font-medium hover:text-gold-500 transition-colors">
+            <a href="tel:9454331861" className="flex items-center gap-3 text-primary font-medium hover:text-gold-500 transition-colors">
               <div className="w-10 h-10 rounded-xl bg-primary/5 flex items-center justify-center">
                 <Phone size={18} className="text-primary" />
               </div>
-              +91 000 000 0000
+              9454331861, 8449790561
             </a>
-            <a href="mailto:info@skpschool.com" className="flex items-center gap-3 text-primary font-medium hover:text-gold-500 transition-colors">
+            <a href="mailto:skpspsmanihari09@gmail.com" className="flex items-center gap-3 text-primary font-medium hover:text-gold-500 transition-colors">
               <div className="w-10 h-10 rounded-xl bg-primary/5 flex items-center justify-center">
                 <Mail size={18} className="text-primary" />
               </div>
-              info@skpschool.com
+              skpspsmanihari09@gmail.com
             </a>
             <a
-              href="https://www.google.com/maps/place/SKP+Sainik+Public+School+Manihari"
+              href="https://www.google.com/maps/search/?api=1&query=SKP+Sainik+Public+School+Manihari+Deoria"
               target="_blank"
               rel="noopener noreferrer"
               className="flex items-center gap-3 text-primary font-medium hover:text-gold-500 transition-colors"
@@ -348,7 +503,7 @@ export default function Home() {
               <div className="w-10 h-10 rounded-xl bg-primary/5 flex items-center justify-center">
                 <MapPin size={18} className="text-primary" />
               </div>
-              Manihari, UP
+              Manihari, Deoria, UP
             </a>
           </div>
         </div>

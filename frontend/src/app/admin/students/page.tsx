@@ -19,7 +19,10 @@ export default function StudentsPage() {
         class: "",
         section: "",
         parentName: "",
-        phone: ""
+        phone: "",
+        isTopper: false,
+        topperYear: "",
+        topperPercent: ""
     })
 
     useEffect(() => {
@@ -47,7 +50,7 @@ export default function StudentsPage() {
             }
             setIsModalOpen(false)
             setEditingStudent(null)
-            setFormData({ firstName: "", lastName: "", admissionNo: "", class: "", section: "", parentName: "", phone: "" })
+            setFormData({ firstName: "", lastName: "", admissionNo: "", class: "", section: "", parentName: "", phone: "", isTopper: false, topperYear: "", topperPercent: "" })
             fetchStudents()
         } catch (error) {
             alert("Error saving student")
@@ -82,11 +85,14 @@ export default function StudentsPage() {
                 ...student,
                 firstName: fName,
                 lastName: lName,
-                phone: student.user?.phone || ""
+                phone: student.user?.phone || "",
+                isTopper: student.isTopper || false,
+                topperYear: student.topperYear || "",
+                topperPercent: student.topperPercent || ""
             })
         } else {
             setEditingStudent(null)
-            setFormData({ firstName: "", lastName: "", admissionNo: "", class: "", section: "", parentName: "", phone: "" })
+            setFormData({ firstName: "", lastName: "", admissionNo: "", class: "", section: "", parentName: "", phone: "", isTopper: false, topperYear: "", topperPercent: "" })
         }
         setIsModalOpen(true)
     }
@@ -111,9 +117,9 @@ export default function StudentsPage() {
                 </button>
             </div>
 
-            <div className="bg-white rounded-3xl border border-slate-100 shadow-sm overflow-hidden text-primary">
-                <div className="p-4 border-b border-slate-50 flex items-center gap-4">
-                    <div className="relative flex-grow max-w-md">
+            <div className="bg-white rounded-2xl md:rounded-3xl border border-slate-100 shadow-sm overflow-hidden text-primary">
+                <div className="p-4 border-b border-slate-50 flex flex-col sm:flex-row items-stretch sm:items-center gap-4">
+                    <div className="relative flex-grow">
                         <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
                         <input
                             type="text"
@@ -123,9 +129,11 @@ export default function StudentsPage() {
                             onChange={(e) => setSearchQuery(e.target.value)}
                         />
                     </div>
-                    <button className="p-3 bg-slate-50 rounded-xl text-slate-400 hover:text-primary transition-colors">
-                        <Filter size={18} />
-                    </button>
+                    <div className="flex items-center gap-2 justify-end">
+                        <button className="p-3 bg-slate-50 rounded-xl text-slate-400 hover:text-primary transition-colors flex-shrink-0">
+                            <Filter size={18} />
+                        </button>
+                    </div>
                 </div>
 
                 <div className="overflow-x-auto">
@@ -201,9 +209,9 @@ export default function StudentsPage() {
                     <motion.div
                         initial={{ opacity: 0, scale: 0.95 }}
                         animate={{ opacity: 1, scale: 1 }}
-                        className="bg-white rounded-3xl shadow-2xl w-full max-w-2xl overflow-hidden"
+                        className="bg-white rounded-2xl md:rounded-3xl shadow-2xl w-full max-w-2xl overflow-hidden max-h-[90vh] overflow-y-auto"
                     >
-                        <div className="p-8 border-b border-slate-50 flex items-center justify-between bg-white text-primary">
+                        <div className="p-6 md:p-8 border-b border-slate-50 flex items-center justify-between bg-white text-primary sticky top-0 z-10">
                             <div>
                                 <h3 className="text-xl font-heading font-black">{editingStudent ? "Edit Student" : "Add New Student"}</h3>
                                 <p className="text-sm text-slate-400">Fill in the student details below.</p>
@@ -212,8 +220,8 @@ export default function StudentsPage() {
                                 <X size={20} />
                             </button>
                         </div>
-                        <form onSubmit={handleSubmit} className="p-8 space-y-6">
-                            <div className="grid grid-cols-2 gap-6">
+                        <form onSubmit={handleSubmit} className="p-6 md:p-8 space-y-6">
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6">
                                 <div className="space-y-2">
                                     <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">First Name</label>
                                     <input
@@ -278,6 +286,40 @@ export default function StudentsPage() {
                                         value={formData.phone}
                                         onChange={e => setFormData({ ...formData, phone: e.target.value })}
                                     />
+                                </div>
+                                <div className="space-y-4 col-span-full border-t border-slate-50 pt-4">
+                                    <div className="flex items-center gap-3">
+                                        <input
+                                            type="checkbox"
+                                            id="isTopper"
+                                            className="w-5 h-5 rounded-md border-slate-200 text-primary focus:ring-primary"
+                                            checked={formData.isTopper}
+                                            onChange={e => setFormData({ ...formData, isTopper: e.target.checked })}
+                                        />
+                                        <label htmlFor="isTopper" className="text-sm font-bold text-primary">Mark as Topper (Hall of Fame)</label>
+                                    </div>
+                                    {formData.isTopper && (
+                                        <div className="grid grid-cols-2 gap-4">
+                                            <div className="space-y-2">
+                                                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Topper Year</label>
+                                                <input
+                                                    placeholder="e.g. 2024-25"
+                                                    className="w-full px-4 py-3 bg-slate-50 border-none rounded-2xl text-sm focus:ring-2 focus:ring-primary/10 transition-all text-primary"
+                                                    value={formData.topperYear}
+                                                    onChange={e => setFormData({ ...formData, topperYear: e.target.value })}
+                                                />
+                                            </div>
+                                            <div className="space-y-2">
+                                                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Percentage/Score</label>
+                                                <input
+                                                    placeholder="e.g. 96.8%"
+                                                    className="w-full px-4 py-3 bg-slate-50 border-none rounded-2xl text-sm focus:ring-2 focus:ring-primary/10 transition-all text-primary"
+                                                    value={formData.topperPercent}
+                                                    onChange={e => setFormData({ ...formData, topperPercent: e.target.value })}
+                                                />
+                                            </div>
+                                        </div>
+                                    )}
                                 </div>
                             </div>
                             <div className="pt-6 border-t border-slate-50 flex gap-4">

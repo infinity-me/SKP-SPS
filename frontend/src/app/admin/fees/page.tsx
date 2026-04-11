@@ -181,22 +181,22 @@ export default function FeesPage() {
     return (
         <div className="space-y-8 pb-12">
             {/* Header with Switcher */}
-            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
                 <div>
-                    <h1 className="text-2xl font-heading font-black text-primary tracking-tight italic uppercase">Finance Management</h1>
+                    <h1 className="text-xl md:text-2xl font-heading font-black text-primary tracking-tight italic uppercase">Finance Management</h1>
                     <p className="text-muted-foreground text-[10px] font-black uppercase tracking-widest">Collections, Structure & Automation</p>
                 </div>
-                <div className="flex bg-white p-1 rounded-2xl border border-slate-100 shadow-sm">
+                <div className="flex bg-white p-1 rounded-2xl border border-slate-100 shadow-sm self-start lg:self-auto">
                     <button 
                         onClick={() => setView("records")}
-                        className={cn("px-6 py-2.5 rounded-xl text-xs font-black uppercase tracking-widest transition-all", 
+                        className={cn("px-4 md:px-6 py-2 md:py-2.5 rounded-xl text-xs font-black uppercase tracking-widest transition-all", 
                             view === "records" ? "bg-primary text-white shadow-lg shadow-primary/20" : "text-slate-400 hover:text-primary")}
                     >
                         Log
                     </button>
                     <button 
                         onClick={() => setView("structure")}
-                        className={cn("px-6 py-2.5 rounded-xl text-xs font-black uppercase tracking-widest transition-all", 
+                        className={cn("px-4 md:px-6 py-2 md:py-2.5 rounded-xl text-xs font-black uppercase tracking-widest transition-all", 
                             view === "structure" ? "bg-primary text-white shadow-lg shadow-primary/20" : "text-slate-400 hover:text-primary")}
                     >
                         Structure
@@ -242,29 +242,29 @@ export default function FeesPage() {
                     </div>
 
                     {/* Stats */}
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                        <div className="p-8 bg-primary rounded-3xl text-white relative overflow-hidden">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
+                        <div className="p-6 md:p-8 bg-primary rounded-2xl md:rounded-3xl text-white relative overflow-hidden">
                             <BadgeIndianRupee className="text-gold-500 mb-6" size={32} />
                             <h3 className="text-[10px] font-black text-white/50 uppercase tracking-widest mb-1">M-T-D Revenue</h3>
-                            <p className="text-3xl font-heading font-black italic">₹{fees.reduce((acc, curr: any) => curr.status === 'paid' ? acc + curr.amount : acc, 0).toLocaleString()}</p>
+                            <p className="text-2xl md:text-3xl font-heading font-black italic">₹{fees.reduce((acc, curr: any) => curr.status === 'paid' ? acc + curr.amount : acc, 0).toLocaleString()}</p>
                         </div>
-                        <div className="p-8 bg-white border border-slate-100 rounded-3xl">
+                        <div className="p-6 md:p-8 bg-white border border-slate-100 rounded-2xl md:rounded-3xl">
                             <CreditCard className="text-red-500 mb-6" size={32} />
                             <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Outstanding</h3>
-                            <p className="text-3xl font-heading font-black italic text-primary">₹{fees.reduce((acc, curr: any) => curr.status === 'pending' ? acc + curr.amount : acc, 0).toLocaleString()}</p>
+                            <p className="text-2xl md:text-3xl font-heading font-black italic text-primary">₹{fees.reduce((acc, curr: any) => curr.status === 'pending' ? acc + curr.amount : acc, 0).toLocaleString()}</p>
                         </div>
-                        <div className="p-8 bg-white border border-slate-100 rounded-3xl">
+                        <div className="p-6 md:p-8 bg-white border border-slate-100 rounded-2xl md:rounded-3xl sm:col-span-2 lg:col-span-1">
                             <CheckCircle2 className="text-emerald-500 mb-6" size={32} />
                             <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Paid Invoices</h3>
-                            <p className="text-3xl font-heading font-black italic text-primary">{fees.filter((f: any) => f.status === 'paid').length}</p>
+                            <p className="text-2xl md:text-3xl font-heading font-black italic text-primary">{fees.filter((f: any) => f.status === 'paid').length}</p>
                         </div>
                     </div>
 
                     {/* Table */}
                     <div className="bg-white rounded-3xl border border-slate-100 shadow-sm overflow-hidden">
-                        <div className="p-8 border-b border-slate-50 flex items-center justify-between">
+                        <div className="p-6 md:p-8 border-b border-slate-50 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                             <h3 className="text-xs font-black text-primary uppercase tracking-widest italic">Transaction Log</h3>
-                            <div className="relative w-72">
+                            <div className="relative w-full sm:w-72">
                                 <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={14} />
                                 <input 
                                     type="text" 
@@ -371,7 +371,7 @@ export default function FeesPage() {
             {/* Combined Modal */}
             {isModalOpen && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-primary/20 backdrop-blur-sm">
-                    <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="bg-white rounded-[2.5rem] shadow-2xl w-full max-w-md overflow-hidden">
+                    <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="bg-white rounded-2xl md:rounded-[2.5rem] shadow-2xl w-full max-w-md overflow-hidden max-h-[90vh] overflow-y-auto">
                         <div className="p-8 border-b border-slate-50 flex items-center justify-between">
                             <h3 className="text-lg font-heading font-black uppercase italic text-primary">{isEdit ? "Update" : "Create"} {view === "records" ? "Record" : "Rule"}</h3>
                             <button onClick={() => setIsModalOpen(false)}><X size={20}/></button>

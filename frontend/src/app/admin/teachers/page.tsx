@@ -49,24 +49,24 @@ export default function TeachersPage() {
                 </button>
             </div>
 
-            <div className="flex flex-col md:flex-row gap-4 items-center justify-between bg-white p-4 rounded-2xl border border-slate-100 shadow-sm">
-                <div className="relative w-full md:w-96">
+            <div className="flex flex-col sm:flex-row gap-4 items-stretch sm:items-center justify-between bg-white p-4 rounded-2xl border border-slate-100 shadow-sm">
+                <div className="relative flex-grow lg:max-w-md">
                     <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
                     <input 
                         type="text" 
                         placeholder="Search by name or Staff ID..." 
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}
-                        className="w-full pl-12 pr-4 py-3 bg-slate-50 border-none rounded-xl text-sm focus:ring-2 focus:ring-primary/5 outline-none transition-all"
+                        className="w-full pl-12 pr-4 py-3 bg-slate-50 border-none rounded-xl text-sm focus:ring-2 focus:ring-primary/5 outline-none transition-all font-medium"
                     />
                 </div>
-                <div className="flex gap-2 w-full md:w-auto">
-                    <button className="flex-1 md:flex-none px-4 py-3 text-xs font-bold text-slate-500 hover:text-primary transition-colors">Filters</button>
-                    <button className="flex-1 md:flex-none px-4 py-3 text-xs font-bold text-slate-500 hover:text-primary transition-colors">Export CSV</button>
+                <div className="flex gap-2">
+                    <button className="flex-1 sm:flex-none px-4 py-3 text-xs font-bold text-slate-500 hover:text-primary transition-colors bg-slate-50 rounded-xl sm:bg-transparent">Filters</button>
+                    <button className="flex-1 sm:flex-none px-4 py-3 text-xs font-bold text-slate-500 hover:text-primary transition-colors bg-slate-50 rounded-xl sm:bg-transparent">Export</button>
                 </div>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
                 {isLoading ? (
                     [1, 2, 3].map(i => <div key={i} className="h-64 bg-slate-50 rounded-3xl animate-pulse" />)
                 ) : filteredTeachers.length > 0 ? (
@@ -76,7 +76,7 @@ export default function TeachersPage() {
                             initial={{ opacity: 0, scale: 0.95 }}
                             animate={{ opacity: 1, scale: 1 }}
                             transition={{ delay: i * 0.05 }}
-                            className="bg-white p-8 rounded-3xl border border-slate-100 shadow-sm hover:shadow-xl transition-all group relative overflow-hidden"
+                            className="bg-white p-6 md:p-8 rounded-2xl md:rounded-3xl border border-slate-100 shadow-sm hover:shadow-xl transition-all group relative overflow-hidden"
                         >
                             <div className="absolute top-0 right-0 p-6">
                                 <button className="text-slate-300 hover:text-primary transition-colors">

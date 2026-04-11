@@ -87,6 +87,19 @@ export const authService = {
 };
 
 
+/* ================= PUBLIC DATA ================= */
+
+export const publicDataService = {
+    getTeachers: () => api.get('/public/teachers'),
+    getToppers: () => api.get('/public/toppers'),
+    getRules: () => api.get('/public/rules'),
+    getStats: () => api.get('/public/stats'),
+    getNotices: () => api.get('/public/notices'),
+    getUpcomingEvents: () => api.get('/public/events/upcoming'),
+    getRecentPhotos: () => api.get('/public/photos/recent'),
+};
+
+
 /* ================= STUDENTS ================= */
 
 export const studentService = {
@@ -248,6 +261,13 @@ export const pageService = {
 export const popupService = {
     get: () => api.get('/settings/popup'),
     update: (data: any) => api.put('/settings/popup', data),
+};
+
+
+/* ================= CHATBOT ================= */
+
+export const chatService = {
+    sendMessage: (message: string, history: any[] = []) => api.post('/chat', { message, history }),
 };
 
 export default api;

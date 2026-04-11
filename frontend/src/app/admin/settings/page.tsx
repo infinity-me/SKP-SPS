@@ -58,7 +58,7 @@ export default function SettingsPage() {
                                 <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-1">Primary Email</label>
                                 <input 
                                     type="email" 
-                                    defaultValue="info@skpschool.com"
+                                    defaultValue="skpspsmanihari09@gmail.com"
                                     className="w-full bg-slate-50 border border-slate-100 rounded-xl px-4 py-3 text-sm font-bold text-primary outline-none focus:bg-white focus:ring-2 focus:ring-primary/5 transition-all"
                                 />
                             </div>
@@ -66,7 +66,7 @@ export default function SettingsPage() {
                                 <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-1">Phone Number</label>
                                 <input 
                                     type="text" 
-                                    defaultValue="+91 000 000 0000"
+                                    defaultValue="9454331861, 8449790561"
                                     className="w-full bg-slate-50 border border-slate-100 rounded-xl px-4 py-3 text-sm font-bold text-primary outline-none focus:bg-white focus:ring-2 focus:ring-primary/5 transition-all"
                                 />
                             </div>

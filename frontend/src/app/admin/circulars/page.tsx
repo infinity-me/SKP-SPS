@@ -176,6 +176,7 @@ export default function CircularsPage() {
                                     <option value="Important">Important</option>
                                     <option value="Event">Event</option>
                                     <option value="Holiday">Holiday</option>
+                                    <option value="Rules">Rules & Guidelines</option>
                                 </select>
                             </div>
                             <div className="space-y-2">

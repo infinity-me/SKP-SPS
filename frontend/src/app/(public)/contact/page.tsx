@@ -22,10 +22,32 @@ export default function ContactPage() {
                         </div>
 
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                            <ContactCard icon={<Phone />} title="Phone" detail="+91 9876543210" sub="Mon-Sat, 8am-4pm" />
-                            <ContactCard icon={<Mail />} title="Email" detail="info@skpsainik.edu.in" sub="Response within 24hrs" />
-                            <ContactCard icon={<MapPin />} title="Location" detail="Manihari, Uttar Pradesh" sub="View on Google Maps" />
-                            <ContactCard icon={<Clock />} title="Hours" detail="8:00 AM - 4:00 PM" sub="Administration Working Hours" />
+                            <ContactCard 
+                                icon={<Phone />} 
+                                title="Phone" 
+                                detail="9454331861, 8449790561" 
+                                sub="Mon-Sat, 8am-4pm" 
+                            />
+                            <ContactCard 
+                                icon={<Mail />} 
+                                title="Email" 
+                                detail="skpspsmanihari09@gmail.com" 
+                                sub="Response within 24hrs" 
+                                href="mailto:skpspsmanihari09@gmail.com"
+                            />
+                            <ContactCard 
+                                icon={<MapPin />} 
+                                title="Location" 
+                                detail="Manihari, Deoria, UP" 
+                                sub="View on Google Maps" 
+                                href="https://www.google.com/maps/search/?api=1&query=SKP+Sainik+Public+School+Manihari+Deoria"
+                            />
+                            <ContactCard 
+                                icon={<Clock />} 
+                                title="Hours" 
+                                detail="8:00 AM - 4:00 PM" 
+                                sub="Administration Working Hours" 
+                            />
                         </div>
                     </div>
 
@@ -66,9 +88,9 @@ export default function ContactPage() {
     )
 }
 
-function ContactCard({ icon, title, detail, sub }: any) {
-    return (
-        <div className="p-6 bg-white rounded-2xl border border-slate-100 transition-all hover:shadow-lg">
+function ContactCard({ icon, title, detail, sub, href }: any) {
+    const content = (
+        <div className="p-6 bg-white rounded-2xl border border-slate-100 transition-all hover:shadow-lg h-full">
             <div className="w-12 h-12 bg-primary/5 rounded-xl flex items-center justify-center text-primary mb-4">
                 {icon}
             </div>
@@ -76,5 +98,15 @@ function ContactCard({ icon, title, detail, sub }: any) {
             <p className="font-bold text-primary mb-1">{detail}</p>
             <p className="text-[10px] text-muted-foreground font-medium">{sub}</p>
         </div>
-    )
+    );
+
+    if (href) {
+        return (
+            <a href={href} target={href.startsWith('http') ? "_blank" : undefined} rel={href.startsWith('http') ? "noopener noreferrer" : undefined}>
+                {content}
+            </a>
+        );
+    }
+
+    return content;
 }

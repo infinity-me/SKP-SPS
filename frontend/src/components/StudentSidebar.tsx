@@ -15,6 +15,7 @@ import {
     ShoppingBag,
     LogOut
 } from "lucide-react"
+import { signOut } from "next-auth/react"
 
 const studentMenuItems = [
     {
@@ -44,10 +45,13 @@ export default function StudentSidebar() {
     const pathname = usePathname()
     const router = useRouter()
 
-    const handleSignOut = () => {
-        localStorage.removeItem("token")
-        localStorage.removeItem("user")
-        router.push("/login")
+    const handleSignOut = async () => {
+        if (window.confirm("Are you sure you want to sign out?")) {
+            localStorage.removeItem("token")
+            localStorage.removeItem("user")
+            sessionStorage.clear()
+            await signOut({ callbackUrl: "https://skpsps.in", redirect: true })
+        }
     }
 
     return (

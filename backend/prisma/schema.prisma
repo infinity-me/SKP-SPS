@@ -36,6 +36,9 @@ model Student {
   address      String?
   parentName   String?
   achievements Json?    // List of student achievements
+  isTopper     Boolean  @default(false)
+  topperYear   String?
+  topperPercent String?
   
   fees         Fee[]
   attendance   Attendance[]

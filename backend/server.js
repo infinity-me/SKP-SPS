@@ -11,6 +11,7 @@ const multer = require('multer');
 const prisma = require('./db');
 
 const fs = require('fs');
+const chatRoutes = require('./routes/chat');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -303,6 +304,9 @@ app.get('/api/auth/google/callback',
     }
 );
 
+// 🤖 CHATBOT ROUTE
+app.use('/api/chat', chatRoutes);
+
 // VERIFY SCHOOL ID (Check existence for student/teacher)
 app.get('/api/auth/verify-id', async (req, res) => {
     try {
@@ -327,6 +331,128 @@ app.get('/api/auth/verify-id', async (req, res) => {
         }
 
         res.json({ success: false, message: "ID not found in school records" });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+
+/* =========================
+   🌐 PUBLIC DATA ROUTES
+========================= */
+
+// GET PUBLIC TEACHERS
+app.get('/api/public/teachers', async (req, res) => {
+    try {
+        const teachers = await prisma.teacher.findMany({
+            include: { user: true },
+            orderBy: { id: 'asc' }
+        });
+        // Select only safe data for public
+        const publicTeachers = teachers.map(t => ({
+            id: t.id,
+            name: t.user.name,
+            designation: t.designation,
+            qualification: t.qualification,
+            profilePic: t.user.profilePic
+        }));
+        res.json({ success: true, data: publicTeachers });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// GET PUBLIC TOPPERS (Students)
+app.get('/api/public/toppers', async (req, res) => {
+    try {
+        const toppers = await prisma.student.findMany({
+            where: { isTopper: true },
+            include: { user: true },
+            orderBy: [{ topperYear: 'desc' }, { topperPercent: 'desc' }]
+        });
+        const publicToppers = toppers.map(s => ({
+            id: s.id,
+            name: s.user.name,
+            class: s.class,
+            topperYear: s.topperYear,
+            topperPercent: s.topperPercent,
+            profilePic: s.user.profilePic
+        }));
+        res.json({ success: true, data: publicToppers });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// GET PUBLIC RULES (From Circulars)
+app.get('/api/public/rules', async (req, res) => {
+    try {
+        const rules = await prisma.circular.findMany({
+            where: { category: 'Rules' },
+            orderBy: { date: 'desc' }
+        });
+        res.json({ success: true, data: rules });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// GET PUBLIC STATS (Counts)
+app.get('/api/public/stats', async (req, res) => {
+    try {
+        const [studentCount, teacherCount] = await Promise.all([
+            prisma.student.count(),
+            prisma.teacher.count()
+        ]);
+        res.json({ 
+            success: true, 
+            data: { 
+                students: studentCount, 
+                teachers: teacherCount 
+            } 
+        });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// GET PUBLIC NOTICES (Active)
+app.get('/api/public/notices', async (req, res) => {
+    try {
+        const notices = await prisma.circular.findMany({
+            where: { category: { not: 'Rules' } }, // Exclude rules as they are in the About section
+            take: 5,
+            orderBy: { date: 'desc' }
+        });
+        res.json({ success: true, data: notices });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// GET PUBLIC UPCOMING EVENTS
+app.get('/api/public/events/upcoming', async (req, res) => {
+    try {
+        const now = new Date();
+        const events = await prisma.calendarEvent.findMany({
+            where: { date: { gte: now } },
+            take: 3,
+            orderBy: { date: 'asc' }
+        });
+        res.json({ success: true, data: events });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// GET PUBLIC RECENT PHOTOS
+app.get('/api/public/photos/recent', async (req, res) => {
+    try {
+        const photos = await prisma.photo.findMany({
+            take: 6,
+            orderBy: { createdAt: 'desc' }
+        });
+        res.json({ success: true, data: photos });
     } catch (err) {
         res.status(500).json({ error: err.message });
     }
@@ -457,7 +583,7 @@ app.get('/api/students', auth, async (req, res) => {
 
 app.post('/api/students', auth, async (req, res) => {
     try {
-        const { firstName, lastName, admissionNo, class: className, section, parentName, phone } = req.body;
+        const { firstName, lastName, admissionNo, class: className, section, parentName, phone, isTopper, topperYear, topperPercent } = req.body;
         
         const hashedPassword = await bcrypt.hash("student123", 10);
         
@@ -477,6 +603,9 @@ app.post('/api/students', auth, async (req, res) => {
                         class: className,
                         section,
                         parentName,
+                        isTopper: isTopper === true || isTopper === 'true',
+                        topperYear,
+                        topperPercent
                     }
                 }
             },
@@ -492,7 +621,7 @@ app.post('/api/students', auth, async (req, res) => {
 
 app.put('/api/students/:id', auth, async (req, res) => {
     try {
-        const { admissionNo, class: className, section, parentName, phone, firstName, lastName } = req.body;
+        const { admissionNo, class: className, section, parentName, phone, firstName, lastName, isTopper, topperYear, topperPercent } = req.body;
         
         const studentId = parseInt(req.params.id);
         const finalPhone = phone && phone.trim() !== "" ? phone.trim() : null;
@@ -504,7 +633,10 @@ app.put('/api/students/:id', auth, async (req, res) => {
                 admissionNo,
                 class: className,
                 section,
-                parentName
+                parentName,
+                isTopper: isTopper === true || isTopper === 'true',
+                topperYear,
+                topperPercent
             },
             include: { user: true }
         });
