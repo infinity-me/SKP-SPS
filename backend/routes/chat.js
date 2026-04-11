@@ -42,7 +42,7 @@ router.post('/', async (req, res) => {
         }
 
         const genAI = new GoogleGenerativeAI(apiKey);
-        const model = genAI.getGenerativeModel({ model: "gemini-flash-latest" });
+        const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
 
         // 3. Build Base System Prompt
         const systemPrompt = `
@@ -78,17 +78,34 @@ ${dbContext || "No recent updates available at the moment."}
         try {
             const result = await model.generateContent(fullPrompt);
             if (!result || !result.response) {
-                throw new Error("No response received from Gemini.");
+                throw new Error("Empty response object received from Gemini.");
             }
-            responseText = result.response.text();
+            
+            // Check for safety block or other finish reasons
+            const response = await result.response;
+            const candidate = response.candidates?.[0];
+            
+            if (candidate?.finishReason === "SAFETY") {
+                responseText = "I'm sorry, I cannot answer that question as it violates my safety guidelines.";
+            } else if (candidate?.finishReason && candidate.finishReason !== "STOP") {
+                throw new Error(`Gemini finish reason: ${candidate.finishReason}`);
+            } else {
+                responseText = response.text();
+            }
         } catch (genErr) {
-            console.warn("Primary model failed, trying fallback (gemini-2.0-flash)...", genErr.message);
-            const fallbackModel = genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
-            const fallbackResult = await fallbackModel.generateContent(fullPrompt);
-            responseText = fallbackResult.response.text();
+            console.warn("Primary model (gemini-1.5-flash) failed, trying fallback...", genErr.message);
+            try {
+                const fallbackModel = genAI.getGenerativeModel({ model: "gemini-1.5-pro" });
+                const fallbackResult = await fallbackModel.generateContent(fullPrompt);
+                const fallbackResponse = await fallbackResult.response;
+                responseText = fallbackResponse.text();
+            } catch (fallbackErr) {
+                console.error("Fallback model also failed:", fallbackErr.message);
+                throw new Error(`Gemini API Error: ${genErr.message} (Fallback failed: ${fallbackErr.message})`);
+            }
         }
 
-        console.log("Gemini response generated successfully.");
+        console.log("Chat response generated successfully.");
         res.json({ success: true, reply: responseText });
     } catch (err) {
         console.error("CRITICAL CHAT ERROR:", err.message);
