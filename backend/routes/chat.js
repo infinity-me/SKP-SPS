@@ -74,16 +74,21 @@ ${dbContext || "No recent updates available at the moment."}
 
         const fullPrompt = `${systemPrompt}\n\nConversation History:\n${formattedHistory}\n\nUser: ${message}\nAssistant:`;
         
-        const result = await model.generateContent(fullPrompt);
-        
-        // Safety check: Ensure we have a response
-        if (!result || !result.response) {
-            throw new Error("No response received from Gemini.");
+        let responseText = "";
+        try {
+            const result = await model.generateContent(fullPrompt);
+            if (!result || !result.response) {
+                throw new Error("No response received from Gemini.");
+            }
+            responseText = result.response.text();
+        } catch (genErr) {
+            console.warn("Primary model failed, trying fallback (gemini-2.0-flash)...", genErr.message);
+            const fallbackModel = genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
+            const fallbackResult = await fallbackModel.generateContent(fullPrompt);
+            responseText = fallbackResult.response.text();
         }
 
-        const responseText = result.response.text();
         console.log("Gemini response generated successfully.");
-
         res.json({ success: true, reply: responseText });
     } catch (err) {
         console.error("CRITICAL CHAT ERROR:", err.message);

@@ -42,11 +42,26 @@ export default function ChatWidget() {
             if (res.data?.success) {
                 setHistory(prev => [...prev, { role: 'assistant', content: res.data.reply }])
             } else {
-                setHistory(prev => [...prev, { role: 'assistant', content: "I'm sorry, I'm having trouble connecting to my brain. Please try again later." }])
+                const errorMsg = res.data?.message || "I'm sorry, I'm having trouble connecting to my brain. Please try again later.";
+                setHistory(prev => [...prev, { role: 'assistant', content: errorMsg }])
             }
-        } catch (error) {
+        } catch (error: any) {
             console.error("Chat Error:", error)
-            setHistory(prev => [...prev, { role: 'assistant', content: "My systems are currently undergoing maintenance. Please reach out to us at skpspsmanihari09@gmail.com." }])
+            const serverMsg = error.response?.data?.message;
+            const debugMsg = error.response?.data?.debug;
+            const status = error.response?.status;
+            
+            let displayMsg = "My systems are currently undergoing maintenance. Please reach out to us at skpspsmanihari09@gmail.com.";
+            
+            if (serverMsg) {
+                displayMsg = `${serverMsg}${debugMsg ? ` (Debug: ${debugMsg})` : ""}`;
+            } else if (status) {
+                displayMsg = `The server returned an error (Status: ${status}). Please check your internet or try again later.`;
+            } else if (error.message === "Network Error") {
+                displayMsg = "Cannot connect to the AI server. Please ensure the backend is running.";
+            }
+
+            setHistory(prev => [...prev, { role: 'assistant', content: displayMsg }])
         } finally {
             setIsLoading(false)
         }
