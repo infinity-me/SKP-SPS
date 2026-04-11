@@ -42,7 +42,7 @@ router.post('/', async (req, res) => {
         }
 
         const genAI = new GoogleGenerativeAI(apiKey);
-        const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
+        const model = genAI.getGenerativeModel({ model: "gemini-flash-latest" });
 
         // 3. Build Base System Prompt
         const systemPrompt = `
@@ -87,6 +87,8 @@ ${dbContext || "No recent updates available at the moment."}
         res.json({ success: true, reply: responseText });
     } catch (err) {
         console.error("CRITICAL CHAT ERROR:", err.message);
+        if (err.stack) console.error(err.stack);
+        
         if (err.status === 404) {
             console.error("404 Error Detail: The model name or API version might be incorrect for this key.");
         }
