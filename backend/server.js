@@ -305,7 +305,9 @@ app.get('/api/auth/google/callback',
 );
 
 // 🤖 CHATBOT ROUTE
+const botRuleRoutes = require('./routes/botRule');
 app.use('/api/chat', chatRoutes);
+app.use('/api/bot-rules', botRuleRoutes);
 
 // VERIFY SCHOOL ID (Check existence for student/teacher)
 app.get('/api/auth/verify-id', async (req, res) => {

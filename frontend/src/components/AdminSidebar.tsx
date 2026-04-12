@@ -16,6 +16,7 @@ import {
     ShoppingCart,
     BarChart3,
     LogOut,
+    MessageSquare,
     X
 } from "lucide-react"
 import { signOut } from "next-auth/react"
@@ -48,6 +49,7 @@ const menuItems = [
         group: "System", items: [
             { name: "Settings", href: "/admin/settings", icon: <Settings size={18} /> },
             { name: "Start Popup", href: "/admin/popup", icon: <ImageIcon size={18} /> },
+            { name: "Bot Management", href: "/admin/bot-rules", icon: <MessageSquare size={18} /> },
         ]
     }
 ]

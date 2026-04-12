@@ -1,10 +1,12 @@
 const express = require('express');
 const router = express.Router();
-const { GoogleGenerativeAI } = require('@google/generative-ai');
+const prisma = require('../db');
+const axios = require('axios');
+const { detectIntent, INTENTS } = require('../utils/intentMatcher');
 const { getChatContext } = require('../utils/contextManager');
 const jwt = require('jsonwebtoken');
 
-// Helper to check auth (Optional for chat, but needed for personal data)
+// Helper to check auth
 const getUserIdFromToken = (req) => {
     let token = req.header('Authorization') || req.headers.authorization;
     if (!token) return null;
@@ -17,108 +19,122 @@ const getUserIdFromToken = (req) => {
     }
 };
 
+/**
+ * Groq AI Client Wrapper
+ */
+async function getGroqResponse(message, context, history = []) {
+    const apiKey = process.env.GROQ_API_KEY;
+    if (!apiKey) throw new Error("Groq API Key missing");
+
+    const systemPrompt = `
+You are the "Smart Brain" of SKP Sainik Public School, Manihari. 
+Character: Disciplined, premium, helpful, and highly intelligent.
+Capabilities: You can reason, understand context, and answer complex questions.
+
+Instructions:
+- Detect the user's language and respond in the same (English, Hindi, or Hinglish).
+- Use the provided SCHOOL CONTEXT to answer school-specific questions.
+- If data is missing in context, use your general knowledge but mention it's general info.
+- Keep responses concise and avoid markdown formatting like bolding (use plain text).
+- Do NOT repeat greetings if they already exist in history.
+
+SCHOOL CONTEXT:
+${context}
+    `;
+
+    try {
+        const response = await axios.post('https://api.groq.com/openai/v1/chat/completions', {
+            model: "llama-3.1-70b-versatile",
+            messages: [
+                { role: "system", content: systemPrompt },
+                ...history.slice(-5).map(m => ({ role: m.role, content: m.content })),
+                { role: "user", content: message }
+            ],
+            temperature: 0.7,
+            max_tokens: 1024
+        }, {
+            headers: {
+                'Authorization': `Bearer ${apiKey}`,
+                'Content-Type': 'application/json'
+            }
+        });
+
+        return response.data.choices[0].message.content;
+    } catch (err) {
+        console.error("Groq API Error:", err.response?.data || err.message);
+        throw err;
+    }
+}
+
 router.post('/', async (req, res) => {
     try {
         const { message, history } = req.body;
         const userId = getUserIdFromToken(req);
 
-        console.log("--- CHAT REQUEST START ---");
-        console.log("User Logged In:", !!userId);
+        console.log("--- HYBRID CHAT START ---");
         
-        // 1. Get Dynamic Context from DB
-        let dbContext = "";
-        try {
-            dbContext = await getChatContext(userId);
-            console.log("Successfully retrieved DB context.");
-        } catch (ctxErr) {
-            console.error("Context Retrieval Failed:", ctxErr);
-            // We continue even if context fails, the bot can still use its general knowledge
+        // 1. Check for manual BotRules in database (Custom overrides - Highest Priority)
+        const customRules = await prisma.botRule.findMany({ where: { isActive: true } });
+        for (const rule of customRules) {
+            const triggers = rule.trigger.split(',').map(t => t.trim().toLowerCase());
+            if (triggers.some(t => message.toLowerCase().includes(t))) {
+                console.log("Matched Manual Rule:", rule.trigger);
+                return res.json({ success: true, reply: rule.response });
+            }
         }
 
-        // 2. Initialize Gemini (Inside handler to ensure fresh env vars)
-        const apiKey = process.env.GEMINI_API_KEY;
-        if (!apiKey || apiKey === "YOUR_GEMINI_API_KEY_HERE") {
-            throw new Error("Gemini API Key is missing or using placeholder.");
-        }
-
-        const genAI = new GoogleGenerativeAI(apiKey);
-        const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash-lite" });
-
-        // 3. Build Base System Prompt
-        const systemPrompt = `
-You are the Official AI Concierge for SKP SAINIK PUBLIC SCHOOL, Manihari (UP). 
-School Info: Founded in 2009 by Shri Satyadev Kushwaha (Chairman). Principal: Mrs. Shobha Sharma. 
-Values: Military discipline, academic rigour, character building. Affiliation: CBSE. 
-Facilities: Smart Classes, Science/Computer Labs, NCC, Hostel, Sports Ground.
-
-Instructions:
-- Be respectful, helpful, and premium in tone.
-- Handle English, Hindi, and Hinglish naturally. Detect the user's language and respond accordingly.
-- ACADEMIC ASSISTANCE: You are also a knowledgeable academic assistant. Feel free to answer general questions about Mathematics, Science, History, Geography, and other subjects using your internal knowledge.
-- SCHOOL CONTEXT: Use the provided CONTEXT for school-specific queries (notices, fees, events). If a school-related question is not covered in the context, suggest contacting skpspsmanihari09@gmail.com or +91 9454331861, 8449790561.
-- Keep responses concise but informative.
-- FORMATTING: Use PLAIN TEXT only. Do NOT use Markdown bolding (like **word**), italics, or other markdown symbols. Use simple dashes (-) for lists.
-- CRITICAL: Do NOT repeat your introductory welcome message or "Namaste" in every response. If the conversation history shows you have already introduced yourself, jump straight to the user's answer.
-
-RECENT SCHOOL DATA & USER CONTEXT:
-${dbContext || "No recent updates available at the moment."}
-        `;
-
-        // 4. Generate Content
-        console.log("Sending prompt to Gemini...");
+        // 2. Detect Intent for Fast-Track responses
+        const intent = detectIntent(message);
         
-        // Format history for context
-        const formattedHistory = (history || [])
-            .map(msg => `${msg.role === 'user' ? 'User' : 'Assistant'}: ${msg.content}`)
-            .join('\n');
+        // 3. Get Context from DB
+        const context = await getChatContext(userId);
 
-        const fullPrompt = `${systemPrompt}\n\nConversation History:\n${formattedHistory}\n\nUser: ${message}\nAssistant:`;
-        
-        let responseText = "";
-        try {
-            const result = await model.generateContent(fullPrompt);
-            if (!result || !result.response) {
-                throw new Error("Empty response object received from Gemini.");
+        // 4. Logic: Use Rules for simple things, AI for "thinking"
+        let reply = "";
+
+        if (intent && intent !== INTENTS.HELP) {
+            // Use fast rule-based response for clear intents
+            console.log("Fast-Track Intent:", intent);
+            switch (intent) {
+                case INTENTS.GREETING:
+                    reply = "Namaste! Welcome to SKP Sainik Public School. How can I assist you today?";
+                    break;
+                case INTENTS.FEES:
+                    const feeData = context.match(/--- PUBLIC SCHOOL UPDATES ---([\s\S]*?)---/);
+                    const personalFee = context.match(/Pending Fees: (.*)/);
+                    reply = "School Fee Info:\n" + (personalFee ? `Your ${personalFee[0]}\n` : "") + "Structure:\n" + (feeData ? feeData[1].split('Fee Structure: ')[1] || "Contact office." : "Contact counter.");
+                    break;
+                case INTENTS.NOTICES:
+                    const noticeData = context.match(/Active Notices: (.*)/);
+                    reply = "Latest Notices:\n" + (noticeData ? noticeData[1].replace(/ \| /g, '\n- ') : "No active notices.");
+                    break;
+                case INTENTS.ADMISSION:
+                    reply = "Admissions are OPEN for 2026-27! Classes Nursery-XII. Visit /admission or call +91 9454331861.";
+                    break;
+                case INTENTS.CONTACT:
+                    reply = "Contact: +91 9454331861 | Email: skpspsmanihari09@gmail.com | Manihari, Kannauj (UP).";
+                    break;
+                default:
+                    // If intent is complex, let AI handle it
+                    console.log("Intent detected but switching to AI for better response...");
+                    reply = await getGroqResponse(message, context, history);
             }
-            
-            // Check for safety block or other finish reasons
-            const response = await result.response;
-            const candidate = response.candidates?.[0];
-            
-            if (candidate?.finishReason === "SAFETY") {
-                responseText = "I'm sorry, I cannot answer that question as it violates my safety guidelines.";
-            } else if (candidate?.finishReason && candidate.finishReason !== "STOP") {
-                throw new Error(`Gemini finish reason: ${candidate.finishReason}`);
-            } else {
-                responseText = response.text();
-            }
-        } catch (genErr) {
-            console.warn("Primary model (gemini-2.5-flash-lite) failed, trying fallback...", genErr.message);
+        } else {
+            // No clear intent or Help -> Let AI think
+            console.log("Switching to Groq AI for reasoning...");
             try {
-                const fallbackModel = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
-                const fallbackResult = await fallbackModel.generateContent(fullPrompt);
-                const fallbackResponse = await fallbackResult.response;
-                responseText = fallbackResponse.text();
-            } catch (fallbackErr) {
-                console.error("Fallback model also failed:", fallbackErr.message);
-                throw new Error(`Gemini API Error: ${genErr.message} (Fallback failed: ${fallbackErr.message})`);
+                reply = await getGroqResponse(message, context, history);
+            } catch (aiErr) {
+                console.warn("AI Fallback failed, using static help message.");
+                reply = "I'm having trouble thinking right now. Please ask about fees, notices, or admissions, or contact us at +91 9454331861.";
             }
         }
 
-        console.log("Chat response generated successfully.");
-        res.json({ success: true, reply: responseText });
+        res.json({ success: true, reply });
+
     } catch (err) {
-        console.error("CRITICAL CHAT ERROR:", err.message);
-        if (err.stack) console.error(err.stack);
-        
-        if (err.status === 404) {
-            console.error("404 Error Detail: The model name or API version might be incorrect for this key.");
-        }
-        res.status(500).json({ 
-            success: false, 
-            message: "Our AI brain is currently being updated. Please try again in a few minutes.",
-            debug: process.env.NODE_ENV === 'development' ? err.message : undefined
-        });
+        console.error("CHAT ERROR:", err);
+        res.status(500).json({ success: false, message: "Our system is busy. Please try again." });
     }
 });
 

@@ -194,3 +194,14 @@ model PopupSetting {
   images     Json     // Will store an array of base64 image strings or URLs
   updatedAt  DateTime @updatedAt
 }
+
+model BotRule {
+  id        Int      @id @default(autoincrement())
+  trigger   String   // Keywords separated by commas
+  response  String   @db.Text
+  category  String   @default("General")
+  language  String   @default("Bilingual")
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}

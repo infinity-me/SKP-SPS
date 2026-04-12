@@ -270,4 +270,13 @@ export const chatService = {
     sendMessage: (message: string, history: any[] = []) => api.post('/chat', { message, history }),
 };
 
+/* ================= BOT RULES ================= */
+
+export const botRuleService = {
+    getAll: () => api.get('/bot-rules'),
+    create: (data: any) => api.post('/bot-rules', data),
+    update: (id: number, data: any) => api.put(`/bot-rules/${id}`, data),
+    delete: (id: number) => api.delete(`/bot-rules/${id}`),
+};
+
 export default api;
