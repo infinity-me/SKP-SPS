@@ -20,7 +20,7 @@ const getUserIdFromToken = (req) => {
 };
 
 /**
- * Groq AI Client Wrapper
+ * Groq AI Client Wrapper - Using 8B Instant for extreme speed and reliability
  */
 async function getGroqResponse(message, context, history = []) {
     const apiKey = process.env.GROQ_API_KEY;
@@ -44,7 +44,7 @@ ${context}
 
     try {
         const response = await axios.post('https://api.groq.com/openai/v1/chat/completions', {
-            model: "llama-3.1-70b-versatile",
+            model: "llama-3.1-8b-instant",
             messages: [
                 { role: "system", content: systemPrompt },
                 ...history.slice(-5).map(m => ({ role: m.role, content: m.content })),
@@ -73,7 +73,7 @@ router.post('/', async (req, res) => {
 
         console.log("--- HYBRID CHAT START ---");
         
-        // 1. Check for manual BotRules in database (Custom overrides - Highest Priority)
+        // 1. Check for manual BotRules in database first (Custom overrides)
         const customRules = await prisma.botRule.findMany({ where: { isActive: true } });
         for (const rule of customRules) {
             const triggers = rule.trigger.split(',').map(t => t.trim().toLowerCase());
@@ -93,40 +93,63 @@ router.post('/', async (req, res) => {
         let reply = "";
 
         if (intent && intent !== INTENTS.HELP) {
-            // Use fast rule-based response for clear intents
             console.log("Fast-Track Intent:", intent);
             switch (intent) {
                 case INTENTS.GREETING:
                     reply = "Namaste! Welcome to SKP Sainik Public School. How can I assist you today?";
                     break;
+                
                 case INTENTS.FEES:
-                    const feeData = context.match(/--- PUBLIC SCHOOL UPDATES ---([\s\S]*?)---/);
-                    const personalFee = context.match(/Pending Fees: (.*)/);
-                    reply = "School Fee Info:\n" + (personalFee ? `Your ${personalFee[0]}\n` : "") + "Structure:\n" + (feeData ? feeData[1].split('Fee Structure: ')[1] || "Contact office." : "Contact counter.");
+                    // Improved parsing of context string
+                    const feeSearch = context.split("Fee Structure: ")[1]?.split("\n")[0];
+                    const personalFeeMatch = context.match(/Pending Fees: (.*)/);
+                    reply = "School Fee Info:\n";
+                    if (personalFeeMatch) reply += `Your ${personalFeeMatch[0]}\n`;
+                    reply += "Regular Structure: " + (feeSearch || "Please contact the school office for current class-wise fee details.");
+                    reply += "\n\nYou can pay at the counter or via bank transfer.";
                     break;
+
                 case INTENTS.NOTICES:
-                    const noticeData = context.match(/Active Notices: (.*)/);
-                    reply = "Latest Notices:\n" + (noticeData ? noticeData[1].replace(/ \| /g, '\n- ') : "No active notices.");
+                    const noticeMatch = context.match(/Active Notices: (.*)/);
+                    reply = "Latest Notices:\n" + (noticeMatch && noticeMatch[1].length > 5 ? noticeMatch[1].replace(/ \| /g, '\n- ') : "No recent notices. Check back soon!");
                     break;
+
+                case INTENTS.EVENTS:
+                    const eventMatch = context.match(/Upcoming Events: (.*)/);
+                    reply = "Upcoming Events:\n" + (eventMatch && eventMatch[1].length > 5 ? eventMatch[1].replace(/ \| /g, '\n- ') : "Please check the academic calendar.");
+                    break;
+
+                case INTENTS.RESULTS:
+                    const resMatch = context.match(/Latest Results: (.*)/);
+                    if (userId && resMatch) {
+                        reply = "Your Results:\n- " + resMatch[1].replace(/, /g, '\n- ');
+                    } else {
+                        reply = "Results are released on the Student Portal. Please login to view your marks.";
+                    }
+                    break;
+
                 case INTENTS.ADMISSION:
-                    reply = "Admissions are OPEN for 2026-27! Classes Nursery-XII. Visit /admission or call +91 9454331861.";
+                    reply = "Admissions are OPEN for 2026-27! Classes Nursery-XII. Visit skpsps.in/admission or call +91 9454331861.";
                     break;
+
                 case INTENTS.CONTACT:
                     reply = "Contact: +91 9454331861 | Email: skpspsmanihari09@gmail.com | Manihari, Kannauj (UP).";
                     break;
+
+                case INTENTS.ABOUT:
+                    reply = "SKP Sainik Public School was founded in 2009 by Shri Satyadev Kushwaha. We are a premier CBSE military-style school. Our Principal is Mrs. Shobha Sharma.";
+                    break;
+
                 default:
-                    // If intent is complex, let AI handle it
-                    console.log("Intent detected but switching to AI for better response...");
+                    // Fallback to AI if intent is detected but not handled
                     reply = await getGroqResponse(message, context, history);
             }
         } else {
-            // No clear intent or Help -> Let AI think
-            console.log("Switching to Groq AI for reasoning...");
+            console.log("Switching to AI for thinking...");
             try {
                 reply = await getGroqResponse(message, context, history);
             } catch (aiErr) {
-                console.warn("AI Fallback failed, using static help message.");
-                reply = "I'm having trouble thinking right now. Please ask about fees, notices, or admissions, or contact us at +91 9454331861.";
+                reply = "I'm having trouble thinking. Try asking about fees, notices, or admissions.";
             }
         }
 
@@ -134,7 +157,7 @@ router.post('/', async (req, res) => {
 
     } catch (err) {
         console.error("CHAT ERROR:", err);
-        res.status(500).json({ success: false, message: "Our system is busy. Please try again." });
+        res.status(500).json({ success: false, message: "System busy. Please try later." });
     }
 });
 
