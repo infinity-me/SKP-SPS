@@ -116,6 +116,8 @@ export const studentService = {
 export const teacherService = {
     getAll: () => api.get('/teachers'),
     create: (data: any) => api.post('/teachers', data),
+    update: (id: number, data: any) => api.put(`/teachers/${id}`, data),
+    delete: (id: number) => api.delete(`/teachers/${id}`),
 };
 
 
@@ -277,6 +279,32 @@ export const botRuleService = {
     create: (data: any) => api.post('/bot-rules', data),
     update: (id: number, data: any) => api.put(`/bot-rules/${id}`, data),
     delete: (id: number) => api.delete(`/bot-rules/${id}`),
+};
+
+/* ================= ADMISSION SETTINGS ================= */
+
+export const admissionSettingsService = {
+    get: () => api.get('/admissions/settings'),
+    update: (data: any) => api.put('/admissions/settings', data),
+    toggle: () => api.patch('/admissions/settings/toggle', {}),
+};
+
+/* ================= SITE CONTENT ================= */
+
+export const siteContentService = {
+    getAll: () => api.get('/site-content'),
+    getBySection: (section: string) => api.get(`/site-content/${section}`),
+    updateKey: (key: string, value: string, section?: string) => api.put(`/site-content/${key}`, { value, section }),
+    bulkUpdate: (updates: Record<string, string>) => api.patch('/site-content', updates),
+};
+
+/* ================= GALLERY CATEGORIES ================= */
+
+export const galleryCategoryService = {
+    getAll: () => api.get('/gallery/categories'),
+    create: (name: string) => api.post('/gallery/categories', { name }),
+    update: (id: number, name: string, order?: number) => api.put(`/gallery/categories/${id}`, { name, order }),
+    delete: (id: number) => api.delete(`/gallery/categories/${id}`),
 };
 
 export default api;

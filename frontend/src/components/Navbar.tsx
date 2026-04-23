@@ -2,46 +2,58 @@
 
 import Link from "next/link"
 import Image from "next/image"
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import { usePathname, useRouter } from "next/navigation"
 import { cn } from "@/lib/utils"
-import { Menu, X, User, LogOut, ChevronDown } from "lucide-react"
+import { Menu, X, User, LogOut, ChevronDown, GraduationCap, BookOpen, Trophy, Shield, Users, FileText } from "lucide-react"
+
+const aboutDropdown = [
+    { name: "Why SKP School", href: "/about", icon: <Shield size={15} /> },
+    { name: "Principal's Desk", href: "/principal", icon: <User size={15} /> },
+    { name: "Our Faculty", href: "/about#faculty", icon: <Users size={15} /> },
+    { name: "Topper Students", href: "/toppers", icon: <Trophy size={15} /> },
+    { name: "Rules & Regulations", href: "/rules", icon: <BookOpen size={15} /> },
+    { name: "Admission Process", href: "/admission#process", icon: <FileText size={15} /> },
+]
 
 const navLinks = [
     { name: "Home", href: "/" },
-    { name: "About Us", href: "/about" },
-    { name: "Circulars & Notices", href: "/notices" },
+    { name: "About Us", href: "/about", dropdown: true },
+    { name: "Notices", href: "/notices" },
     { name: "Fee Structure", href: "/fees" },
-    { name: "Calendar", href: "/calendar" },
-    { name: "Store", href: "/store" },
     { name: "Gallery", href: "/gallery" },
+    { name: "Store", href: "/store" },
     { name: "Contact", href: "/contact" },
 ]
 
 export default function Navbar() {
-    const [isScrolled, setIsScrolled] = useState(false)
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
+    const [aboutOpen, setAboutOpen] = useState(false)
+    const [mobileAboutOpen, setMobileAboutOpen] = useState(false)
     const [user, setUser] = useState<any>(null)
     const [profileDropdownOpen, setProfileDropdownOpen] = useState(false)
     const [mounted, setMounted] = useState(false)
     const pathname = usePathname()
     const router = useRouter()
+    const dropdownRef = useRef<HTMLDivElement>(null)
 
     useEffect(() => {
         setMounted(true)
-        const handleScroll = () => {
-            setIsScrolled(window.scrollY > 20)
-        }
-        window.addEventListener("scroll", handleScroll)
-
-        // Check for logged in user
         const storedUser = localStorage.getItem("user")
-        if (storedUser) {
-            setUser(JSON.parse(storedUser))
-        }
-
-        return () => window.removeEventListener("scroll", handleScroll)
+        if (storedUser) setUser(JSON.parse(storedUser))
     }, [pathname])
+
+    // Close dropdown on outside click
+    useEffect(() => {
+        const handler = (e: MouseEvent) => {
+            if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
+                setAboutOpen(false)
+                setProfileDropdownOpen(false)
+            }
+        }
+        document.addEventListener("mousedown", handler)
+        return () => document.removeEventListener("mousedown", handler)
+    }, [])
 
     const handleLogout = () => {
         localStorage.removeItem("token")
@@ -52,84 +64,96 @@ export default function Navbar() {
     }
 
     return (
-        <nav
-            className={cn(
-                "transition-all duration-300 px-4 md:px-6 py-4 relative z-50",
-                "bg-primary/95 backdrop-blur-md border-b border-gold-500/20 py-2 md:py-3 shadow-lg"
-            )}
-        >
-            <div className="max-w-7xl mx-auto flex items-center justify-between">
-                <Link href="/" className="flex items-center gap-2 md:gap-3">
-                    <div className="relative w-8 h-8 md:w-12 md:h-12 bg-white rounded-full p-1 overflow-hidden shrink-0">
-                        <Image
-                            src="/images/logo.png"
-                            alt="SKP School Logo"
-                            fill
-                            className="object-contain"
-                        />
+        <nav className="transition-all duration-300 px-4 md:px-6 py-2 md:py-3 relative z-50 bg-primary/95 backdrop-blur-md border-b border-gold-500/20 shadow-lg">
+            <div className="max-w-7xl mx-auto flex items-center justify-between" ref={dropdownRef}>
+
+                {/* Logo */}
+                <Link href="/" className="flex items-center gap-2 md:gap-3 shrink-0">
+                    <div className="relative w-9 h-9 md:w-11 md:h-11 bg-white rounded-full p-1 overflow-hidden shrink-0">
+                        <Image src="/images/logo.png" alt="SKP School Logo" fill sizes="(max-width: 768px) 36px, 44px" className="object-contain" />
                     </div>
                     <div className="block">
-                        <h1 className="text-white font-heading font-black text-[10px] sm:text-xs md:text-sm tracking-tighter leading-tight italic uppercase">
-                            <span className="text-[11px] sm:text-sm md:text-base tracking-normal not-italic font-black">SKP SAINIK</span> <br />
+                        <h1 className="text-white font-heading font-black text-[10px] sm:text-xs md:text-sm tracking-tighter leading-tight uppercase">
+                            <span className="text-[11px] sm:text-sm md:text-base tracking-normal not-italic font-black">SKP SAINIK</span><br />
                             <span className="text-gold-500 font-bold not-italic tracking-normal">PUBLIC SCHOOL</span>
                         </h1>
+                        <p className="text-white/30 text-[8px] font-medium tracking-widest hidden md:block">Affil. No. 2131950 | CBSE</p>
                     </div>
                 </Link>
 
                 {/* Desktop Navigation */}
-                <div className="hidden lg:flex items-center gap-6">
-                    {navLinks.map((link) => (
-                        <Link
-                            key={link.name}
-                            href={link.href}
-                            className="text-white/80 hover:text-gold-500 transition-colors font-medium text-[13px]"
-                        >
-                            {link.name}
-                        </Link>
-                    ))}
+                <div className="hidden lg:flex items-center gap-1">
+                    {navLinks.map((link) =>
+                        link.dropdown ? (
+                            <div key={link.name} className="relative">
+                                <button
+                                    onClick={() => { setAboutOpen(!aboutOpen); setProfileDropdownOpen(false) }}
+                                    className={cn(
+                                        "flex items-center gap-1 px-3 py-2 rounded-lg text-white/80 hover:text-gold-500 transition-colors font-medium text-[13px]",
+                                        pathname.startsWith("/about") || pathname.startsWith("/principal") || pathname.startsWith("/toppers") || pathname.startsWith("/rules") ? "text-gold-500" : ""
+                                    )}
+                                >
+                                    {link.name} <ChevronDown size={14} className={cn("transition-transform duration-200", aboutOpen && "rotate-180")} />
+                                </button>
+
+                                {aboutOpen && (
+                                    <div className="absolute top-full left-0 mt-2 w-56 bg-white rounded-2xl shadow-2xl border border-slate-100 py-2 overflow-hidden z-[100] animate-in fade-in zoom-in-95 duration-150">
+                                        {aboutDropdown.map((item) => (
+                                            <Link
+                                                key={item.name}
+                                                href={item.href}
+                                                onClick={() => setAboutOpen(false)}
+                                                className="flex items-center gap-3 px-4 py-2.5 text-sm font-medium text-slate-600 hover:bg-slate-50 hover:text-primary transition-all"
+                                            >
+                                                <span className="text-gold-500">{item.icon}</span>
+                                                {item.name}
+                                            </Link>
+                                        ))}
+                                    </div>
+                                )}
+                            </div>
+                        ) : (
+                            <Link
+                                key={link.name}
+                                href={link.href}
+                                className={cn(
+                                    "px-3 py-2 rounded-lg text-white/80 hover:text-gold-500 transition-colors font-medium text-[13px]",
+                                    pathname === link.href ? "text-gold-500" : ""
+                                )}
+                            >
+                                {link.name}
+                            </Link>
+                        )
+                    )}
                 </div>
 
+                {/* Desktop CTA */}
                 <div className="hidden lg:flex items-center gap-3">
                     {!mounted ? (
-                        <div className="w-40" /> // Placeholder while mounting
+                        <div className="w-40" />
                     ) : !user ? (
                         <>
-                            <Link
-                                href="/pay-fees"
-                                className="px-5 py-2 rounded-full border border-gold-500 text-gold-500 text-xs font-black uppercase tracking-widest hover:bg-gold-500 hover:text-primary transition-all duration-300"
-                            >
+                            <Link href="/pay-fees" className="px-5 py-2 rounded-full border border-gold-500 text-gold-500 text-xs font-black uppercase tracking-widest hover:bg-gold-500 hover:text-primary transition-all duration-300">
                                 Pay Fees
                             </Link>
-                            <Link
-                                href="/admission"
-                                className="px-5 py-2 rounded-full bg-gold-500 text-primary text-xs font-black uppercase tracking-widest hover:bg-gold-400 transition-all duration-300 shadow-[0_0_15px_rgba(212,175,55,0.3)]"
-                            >
+                            <Link href="/admission" className="px-5 py-2 rounded-full bg-gold-500 text-primary text-xs font-black uppercase tracking-widest hover:bg-gold-400 transition-all duration-300 shadow-[0_0_15px_rgba(212,175,55,0.3)]">
                                 Apply Now
                             </Link>
-                            <Link
-                                href="/login"
-                                className="px-5 py-2 rounded-full border border-white/20 text-white text-xs font-black uppercase tracking-widest hover:bg-white hover:text-primary transition-all duration-300 ml-1"
-                            >
+                            <Link href="/login" className="px-5 py-2 rounded-full border border-white/20 text-white text-xs font-black uppercase tracking-widest hover:bg-white hover:text-primary transition-all duration-300 ml-1">
                                 Login
                             </Link>
                         </>
                     ) : (
                         <div className="relative flex items-center gap-4">
-                            <Link
-                                href="/admission"
-                                className="px-5 py-2 rounded-full bg-gold-500 text-primary text-xs font-black uppercase tracking-widest hover:bg-gold-400 transition-all duration-300 shadow-[0_0_15px_rgba(212,175,55,0.3)]"
-                            >
+                            <Link href="/admission" className="px-5 py-2 rounded-full bg-gold-500 text-primary text-xs font-black uppercase tracking-widest hover:bg-gold-400 transition-all duration-300 shadow-[0_0_15px_rgba(212,175,55,0.3)]">
                                 Apply Now
                             </Link>
-                            <Link
-                                href="/pay-fees"
-                                className="px-5 py-2 rounded-full border border-gold-500 text-gold-500 text-xs font-black uppercase tracking-widest hover:bg-gold-500 hover:text-primary transition-all duration-300"
-                            >
+                            <Link href="/pay-fees" className="px-5 py-2 rounded-full border border-gold-500 text-gold-500 text-xs font-black uppercase tracking-widest hover:bg-gold-500 hover:text-primary transition-all duration-300">
                                 Pay Fees
                             </Link>
                             <div className="relative">
-                                <button 
-                                    onClick={() => setProfileDropdownOpen(!profileDropdownOpen)}
+                                <button
+                                    onClick={() => { setProfileDropdownOpen(!profileDropdownOpen); setAboutOpen(false) }}
                                     className="flex items-center gap-2 p-1 pr-3 bg-white/5 hover:bg-white/10 rounded-full border border-white/10 transition-all group"
                                 >
                                     <div className="relative w-8 h-8 rounded-full overflow-hidden border border-gold-500/50 bg-primary/40">
@@ -151,26 +175,15 @@ export default function Navbar() {
                                             <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Authenticated as</p>
                                             <p className="text-sm font-bold text-primary truncate">{user.email}</p>
                                         </div>
-                                        <Link 
-                                            href="/profile" 
-                                            onClick={() => setProfileDropdownOpen(false)}
-                                            className="flex items-center gap-3 px-4 py-2.5 text-sm font-medium text-slate-600 hover:bg-slate-50 hover:text-primary transition-all"
-                                        >
+                                        <Link href="/profile" onClick={() => setProfileDropdownOpen(false)} className="flex items-center gap-3 px-4 py-2.5 text-sm font-medium text-slate-600 hover:bg-slate-50 hover:text-primary transition-all">
                                             <User size={16} className="text-gold-500" /> My Digital Profile
                                         </Link>
                                         {user.role === 'admin' && (
-                                            <Link 
-                                                href="/admin" 
-                                                onClick={() => setProfileDropdownOpen(false)}
-                                                className="flex items-center gap-3 px-4 py-2.5 text-sm font-medium text-slate-600 hover:bg-slate-50 hover:text-primary transition-all"
-                                            >
+                                            <Link href="/admin" onClick={() => setProfileDropdownOpen(false)} className="flex items-center gap-3 px-4 py-2.5 text-sm font-medium text-slate-600 hover:bg-slate-50 hover:text-primary transition-all">
                                                 <div className="w-4 h-4 bg-primary text-white rounded flex items-center justify-center text-[8px] font-black">A</div> Admin Dashboard
                                             </Link>
                                         )}
-                                        <button 
-                                            onClick={handleLogout}
-                                            className="w-full flex items-center gap-3 px-4 py-2.5 text-sm font-medium text-red-500 hover:bg-red-50 transition-all border-t border-slate-50 mt-1"
-                                        >
+                                        <button onClick={handleLogout} className="w-full flex items-center gap-3 px-4 py-2.5 text-sm font-medium text-red-500 hover:bg-red-50 transition-all border-t border-slate-50 mt-1">
                                             <LogOut size={16} /> Logout
                                         </button>
                                     </div>
@@ -181,60 +194,52 @@ export default function Navbar() {
                 </div>
 
                 {/* Mobile Toggle */}
-                <button
-                    className="lg:hidden text-white"
-                    onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-                >
-                    {mobileMenuOpen ? <X size={28} /> : <Menu size={28} />}
+                <button className="lg:hidden text-white p-2" onClick={() => setMobileMenuOpen(!mobileMenuOpen)}>
+                    {mobileMenuOpen ? <X size={26} /> : <Menu size={26} />}
                 </button>
             </div>
 
             {/* Mobile Menu */}
             {mobileMenuOpen && (
-                <div className="lg:hidden absolute top-full left-0 right-0 bg-primary border-t border-gold-500/20 p-6 flex flex-col gap-6 animate-in slide-in-from-top duration-300">
-                    {navLinks.map((link) => (
-                        <Link
-                            key={link.name}
-                            href={link.href}
-                            className="text-white/80 text-lg font-medium"
-                            onClick={() => setMobileMenuOpen(false)}
-                        >
-                            {link.name}
-                        </Link>
-                    ))}
-                    <div className="flex flex-col gap-4 pt-4 border-t border-white/10">
+                <div className="lg:hidden absolute top-full left-0 right-0 bg-primary border-t border-gold-500/20 p-6 flex flex-col gap-2 animate-in slide-in-from-top duration-300 z-50 shadow-2xl max-h-[80vh] overflow-y-auto">
+                    {navLinks.map((link) =>
+                        link.dropdown ? (
+                            <div key={link.name}>
+                                <button
+                                    onClick={() => setMobileAboutOpen(!mobileAboutOpen)}
+                                    className="w-full flex items-center justify-between text-white/80 text-base font-medium py-3 border-b border-white/5"
+                                >
+                                    {link.name} <ChevronDown size={16} className={cn("transition-transform", mobileAboutOpen && "rotate-180")} />
+                                </button>
+                                {mobileAboutOpen && (
+                                    <div className="pl-4 flex flex-col gap-1 mt-2">
+                                        {aboutDropdown.map((item) => (
+                                            <Link key={item.name} href={item.href} onClick={() => setMobileMenuOpen(false)}
+                                                className="flex items-center gap-3 text-white/60 text-sm py-2 hover:text-gold-500 transition-colors">
+                                                <span className="text-gold-500">{item.icon}</span> {item.name}
+                                            </Link>
+                                        ))}
+                                    </div>
+                                )}
+                            </div>
+                        ) : (
+                            <Link key={link.name} href={link.href} className="text-white/80 text-base font-medium py-3 border-b border-white/5 hover:text-gold-500 transition-colors"
+                                onClick={() => setMobileMenuOpen(false)}>
+                                {link.name}
+                            </Link>
+                        )
+                    )}
+                    <div className="flex flex-col gap-3 pt-4 mt-2 border-t border-white/10">
                         {user ? (
                             <>
-                                <Link 
-                                    href="/profile" 
-                                    className="w-full py-3 text-center rounded-xl bg-white/5 text-white font-bold"
-                                    onClick={() => setMobileMenuOpen(false)}
-                                >
-                                    My Profile
-                                </Link>
-                                <button 
-                                    onClick={handleLogout}
-                                    className="w-full py-3 text-center rounded-xl bg-red-500/10 text-red-500 font-bold"
-                                >
-                                    Logout
-                                </button>
+                                <Link href="/profile" className="w-full py-3 text-center rounded-xl bg-white/5 text-white font-bold" onClick={() => setMobileMenuOpen(false)}>My Profile</Link>
+                                <button onClick={handleLogout} className="w-full py-3 text-center rounded-xl bg-red-500/10 text-red-500 font-bold">Logout</button>
                             </>
                         ) : (
                             <>
-                                <Link
-                                    href="/admission"
-                                    className="w-full py-3 text-center rounded-xl bg-gold-500 text-primary font-bold"
-                                    onClick={() => setMobileMenuOpen(false)}
-                                >
-                                    Apply Now
-                                </Link>
-                                <Link
-                                    href="/login"
-                                    className="w-full py-3 text-center rounded-xl border border-white/20 text-white font-bold"
-                                    onClick={() => setMobileMenuOpen(false)}
-                                >
-                                    Login
-                                </Link>
+                                <Link href="/admission" className="w-full py-3 text-center rounded-xl bg-gold-500 text-primary font-bold" onClick={() => setMobileMenuOpen(false)}>Apply Now</Link>
+                                <Link href="/pay-fees" className="w-full py-3 text-center rounded-xl border border-gold-500 text-gold-500 font-bold" onClick={() => setMobileMenuOpen(false)}>Pay Fees</Link>
+                                <Link href="/login" className="w-full py-3 text-center rounded-xl border border-white/20 text-white font-bold" onClick={() => setMobileMenuOpen(false)}>Login</Link>
                             </>
                         )}
                     </div>

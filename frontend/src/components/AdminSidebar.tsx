@@ -17,7 +17,10 @@ import {
     BarChart3,
     LogOut,
     MessageSquare,
-    X
+    X,
+    ToggleLeft,
+    Edit3,
+    Tag
 } from "lucide-react"
 import { signOut } from "next-auth/react"
 
@@ -33,14 +36,17 @@ const menuItems = [
             { name: "Students", href: "/admin/students", icon: <GraduationCap size={18} /> },
             { name: "Teachers", href: "/admin/teachers", icon: <Users size={18} /> },
             { name: "Fees & Finance", href: "/admin/fees", icon: <CreditCard size={18} /> },
+            { name: "Admissions", href: "/admin/admissions", icon: <ToggleLeft size={18} /> },
         ]
     },
     {
         group: "Content CMS", items: [
+            { name: "Website Content", href: "/admin/content", icon: <Edit3 size={18} /> },
             { name: "Calendar", href: "/admin/calendar", icon: <FileText size={18} /> },
             { name: "Circulars", href: "/admin/circulars", icon: <Bell size={18} /> },
             { name: "Notices", href: "/admin/notices", icon: <Megaphone size={18} /> },
             { name: "Gallery", href: "/admin/gallery", icon: <ImageIcon size={18} /> },
+            { name: "Gallery Categories", href: "/admin/gallery/categories", icon: <Tag size={18} /> },
             { name: "Products & Store", href: "/admin/store", icon: <ShoppingCart size={18} /> },
             { name: "Pages", href: "/admin/pages", icon: <FileText size={18} /> },
         ]

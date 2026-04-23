@@ -5,7 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation"
 import Image from "next/image"
 import Link from "next/link"
 import { motion } from "framer-motion"
-import { LogIn, Phone, Mail, Fingerprint, ShieldCheck, User } from "lucide-react"
+import { LogIn, Phone, Mail, Fingerprint, ShieldCheck, User, ArrowLeft } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { authService } from "@/lib/api"
 
@@ -142,6 +142,15 @@ function AuthContent() {
 
             {/* Right: Auth Content */}
             <div className="flex-grow flex items-center justify-center p-8 md:p-12 lg:p-24 relative overflow-y-auto">
+                {/* Back to Home — top left */}
+                <Link
+                    href="/"
+                    className="absolute top-6 left-6 flex items-center gap-2 text-sm font-bold text-slate-400 hover:text-primary transition-colors group"
+                >
+                    <ArrowLeft size={16} className="group-hover:-translate-x-1 transition-transform" />
+                    Back to Home
+                </Link>
+
                 <div className="w-full max-w-sm space-y-8">
                     <div className="space-y-2">
                         <h1 className="text-3xl font-heading font-black text-primary tracking-tight">Login</h1>

@@ -1,10 +1,12 @@
 generator client {
-  provider = "prisma-client-js"
+  provider        = "prisma-client-js"
+  previewFeatures = ["driverAdapters"]
 }
 
 datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
 }
 
 model User {
@@ -35,6 +37,8 @@ model Student {
   dob          DateTime?
   address      String?
   parentName   String?
+  phone        String?
+  photo        String?  @db.Text  // base64 or URL
   achievements Json?    // List of student achievements
   isTopper     Boolean  @default(false)
   topperYear   String?
@@ -52,6 +56,9 @@ model Teacher {
   staffId      String   @unique
   designation  String
   qualification String
+  subject      String?
+  experience   String?
+  photo        String?  @db.Text  // base64 or URL
   achievements Json?    // List of teacher achievements
 }
 
@@ -205,3 +212,33 @@ model BotRule {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
+
+// ─── Admission Settings ─────────────────────────────────────────────
+model AdmissionSetting {
+  id               Int      @id @default(1)
+  isOpen           Boolean  @default(true)
+  bannerText       String   @default("Admissions Open for Session 2026–27")
+  lastDateText     String   @default("Last Date: 31 May 2026")
+  seats            Json     // { "Nursery": 30, "Class I": 40, ... }
+  updatedAt        DateTime @updatedAt
+}
+
+// ─── Site Content Editor ─────────────────────────────────────────────
+model SiteContent {
+  id        Int      @id @default(autoincrement())
+  key       String   @unique  // e.g. "hero_title", "principal_name", "school_tagline"
+  label     String            // Human readable label shown in admin
+  value     String   @db.Text
+  section   String            // "homepage", "about", "contact"
+  updatedAt DateTime @updatedAt
+}
+
+// ─── Gallery Categories ───────────────────────────────────────────────
+model PhotoCategory {
+  id        Int      @id @default(autoincrement())
+  name      String   @unique
+  slug      String   @unique
+  order     Int      @default(0)
+  createdAt DateTime @default(now())
+}
+
