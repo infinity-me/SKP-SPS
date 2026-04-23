@@ -24,7 +24,11 @@ export default function Hero() {
                 if (data.length > 0) {
                     const sorted = [...data].sort((a, b) => (b.year || "") > (a.year || "") ? 1 : -1)
                     const latest = sorted[0]?.year
-                    setToppers(sorted.filter(t => t.year === latest).slice(0, 3))
+                    const recent = sorted
+                        .filter(t => t.year === latest)
+                        .sort((a, b) => parseFloat(b.percentage || "0") - parseFloat(a.percentage || "0"))
+                        .slice(0, 3)
+                    setToppers(recent)
                     return
                 }
             } catch {
@@ -37,7 +41,11 @@ export default function Hero() {
                 if (data2.length > 0) {
                     const sorted = [...data2].sort((a, b) => (b.topperYear || "") > (a.topperYear || "") ? 1 : -1)
                     const latest = sorted[0]?.topperYear
-                    setToppers(sorted.filter(t => t.topperYear === latest).slice(0, 3))
+                    const recent = sorted
+                        .filter(t => t.topperYear === latest)
+                        .sort((a, b) => parseFloat(b.topperPercent || "0") - parseFloat(a.topperPercent || "0"))
+                        .slice(0, 3)
+                    setToppers(recent)
                     return
                 }
             } catch { }
