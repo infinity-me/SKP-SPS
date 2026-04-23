@@ -16,15 +16,35 @@ export default function Hero() {
     const [toppers, setToppers] = useState<any[]>([])
 
     useEffect(() => {
-        publicDataService.getBoardToppers()
-            .then(res => {
+        const load = async () => {
+            try {
+                // Try new dedicated endpoint first
+                const res = await publicDataService.getBoardToppers()
                 const data: any[] = res?.data?.data || []
-                const sorted = [...data].sort((a, b) => (b.year || "") > (a.year || "") ? 1 : -1)
-                const latest = sorted[0]?.year
-                const recent = sorted.filter(t => t.year === latest).slice(0, 3)
-                setToppers(recent.length > 0 ? recent : FALLBACK_TOPPERS)
-            })
-            .catch(() => setToppers(FALLBACK_TOPPERS))
+                if (data.length > 0) {
+                    const sorted = [...data].sort((a, b) => (b.year || "") > (a.year || "") ? 1 : -1)
+                    const latest = sorted[0]?.year
+                    setToppers(sorted.filter(t => t.year === latest).slice(0, 3))
+                    return
+                }
+            } catch {
+                // New endpoint not deployed yet, fall through
+            }
+            try {
+                // Fall back to old student-based toppers endpoint
+                const res2 = await publicDataService.getToppers()
+                const data2: any[] = res2?.data?.data || []
+                if (data2.length > 0) {
+                    const sorted = [...data2].sort((a, b) => (b.topperYear || "") > (a.topperYear || "") ? 1 : -1)
+                    const latest = sorted[0]?.topperYear
+                    setToppers(sorted.filter(t => t.topperYear === latest).slice(0, 3))
+                    return
+                }
+            } catch { }
+            // Final fallback: hardcoded
+            setToppers(FALLBACK_TOPPERS)
+        }
+        load()
     }, [])
 
     const year = toppers[0]?.year || toppers[0]?.topperYear || "2026"

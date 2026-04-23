@@ -49,7 +49,11 @@ export default function ToppersAdminPage() {
             raw.sort((a, b) => b.year > a.year ? -1 : 1)
             setToppers(raw)
         } catch (e: any) {
-            setError(e?.response?.data?.error || "Failed to load toppers")
+            if (e?.response?.status === 404) {
+                setError("⚠️ Backend not updated yet — please redeploy the backend on Render to enable this feature. The homepage will still show toppers using fallback data.")
+            } else {
+                setError(e?.response?.data?.error || "Failed to load toppers. Is the backend running?")
+            }
         } finally { setLoading(false) }
     }
 
