@@ -423,7 +423,7 @@ seedBoardToppers().catch(console.error);
 // Public GET — no auth needed
 app.get('/api/board-toppers', async (req, res) => {
     try {
-        const toppers = await prisma.boardTopper.findMany({ orderBy: [{ year: 'desc' }, { createdAt: 'asc' }] });
+        const toppers = await prisma.boardTopper.findMany({ orderBy: [{ year: 'desc' }, { percentage: 'desc' }] });
         res.json({ success: true, data: toppers });
     } catch (err) { res.status(500).json({ error: err.message }); }
 });
@@ -530,7 +530,7 @@ const auth = (req, res, next) => {
 // ── BOARD TOPPERS admin routes (auth required) ────────────────────────────────
 app.get('/api/admin/board-toppers', auth, requireRole('admin', 'teacher'), async (req, res) => {
     try {
-        const toppers = await prisma.boardTopper.findMany({ orderBy: [{ year: 'desc' }, { createdAt: 'asc' }] });
+        const toppers = await prisma.boardTopper.findMany({ orderBy: [{ year: 'desc' }, { percentage: 'desc' }] });
         res.json({ success: true, data: toppers });
     } catch (err) { res.status(500).json({ error: err.message }); }
 });
