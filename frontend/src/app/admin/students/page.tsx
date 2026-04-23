@@ -8,7 +8,7 @@ import { cn } from "@/lib/utils"
 
 const CLASSES = ["All","Nursery","LKG","UKG","Class I","Class II","Class III","Class IV","Class V","Class VI","Class VII","Class VIII","Class IX","Class X","Class XI","Class XII"]
 const SECTIONS = ["All","A","B","C","D"]
-const BLANK_FORM = { firstName:"", lastName:"", admissionNo:"", class:"", section:"A", parentName:"", phone:"", photo:"", isTopper:false, topperYear:"", topperPercent:"" }
+const BLANK_FORM = { firstName:"", lastName:"", admissionNo:"", class:"", section:"A", parentName:"", phone:"", photo:"", isTopper:false, topperYear:"", topperPercent:"", topperRank:"", topperMarks:"", topperClass:"" }
 
 function ImageUploader({ value, onChange }: { value: string; onChange: (v: string) => void }) {
     const ref = useRef<HTMLInputElement>(null)
@@ -29,7 +29,7 @@ function ImageUploader({ value, onChange }: { value: string; onChange: (v: strin
                 <button type="button" onClick={() => setUrlMode(false)} className={cn("flex-1 py-2 rounded-xl text-xs font-bold transition-all", !urlMode ? "bg-primary text-white" : "bg-slate-50 text-slate-400")}>Upload File</button>
             </div>
             {urlMode ? (
-                <input type="url" placeholder="https://example.com/photo.jpg" value={value?.startsWith("data:") ? "" : value} onChange={e => onChange(e.target.value)}
+                <input type="url" placeholder="https://example.com/photo.jpg" value={value?.startsWith("data:") ? "" : (value || "")} onChange={e => onChange(e.target.value)}
                     className="w-full px-4 py-3 bg-slate-50 rounded-xl text-sm text-primary outline-none focus:ring-2 focus:ring-primary/10" />
             ) : (
                 <div onClick={() => ref.current?.click()} className="border-2 border-dashed border-slate-200 rounded-xl p-6 text-center cursor-pointer hover:border-primary/40 transition-colors">
@@ -284,13 +284,28 @@ export default function StudentsPage() {
                                 {form.isTopper && (
                                     <div className="grid grid-cols-2 gap-4">
                                         <div className="space-y-2">
-                                            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Topper Year</label>
-                                            <input placeholder="2024-25" value={form.topperYear} onChange={e => setForm(f => ({...f, topperYear: e.target.value}))}
+                                            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Board Year</label>
+                                            <input placeholder="2026" value={(form as any).topperYear} onChange={e => setForm(f => ({...f, topperYear: e.target.value}))}
                                                 className="w-full px-4 py-3 bg-slate-50 rounded-xl text-sm text-primary outline-none" />
                                         </div>
                                         <div className="space-y-2">
-                                            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Score / %</label>
-                                            <input placeholder="96.8%" value={form.topperPercent} onChange={e => setForm(f => ({...f, topperPercent: e.target.value}))}
+                                            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Percentage</label>
+                                            <input placeholder="95" value={(form as any).topperPercent} onChange={e => setForm(f => ({...f, topperPercent: e.target.value}))}
+                                                className="w-full px-4 py-3 bg-slate-50 rounded-xl text-sm text-primary outline-none" />
+                                        </div>
+                                        <div className="space-y-2">
+                                            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Rank</label>
+                                            <input placeholder="1st Rank / Joint 1st Rank" value={(form as any).topperRank} onChange={e => setForm(f => ({...f, topperRank: e.target.value}))}
+                                                className="w-full px-4 py-3 bg-slate-50 rounded-xl text-sm text-primary outline-none" />
+                                        </div>
+                                        <div className="space-y-2">
+                                            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Marks (e.g. 570/600)</label>
+                                            <input placeholder="570/600" value={(form as any).topperMarks} onChange={e => setForm(f => ({...f, topperMarks: e.target.value}))}
+                                                className="w-full px-4 py-3 bg-slate-50 rounded-xl text-sm text-primary outline-none" />
+                                        </div>
+                                        <div className="col-span-2 space-y-2">
+                                            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Board Class Label</label>
+                                            <input placeholder="Class X / Class XII" value={(form as any).topperClass} onChange={e => setForm(f => ({...f, topperClass: e.target.value}))}
                                                 className="w-full px-4 py-3 bg-slate-50 rounded-xl text-sm text-primary outline-none" />
                                         </div>
                                     </div>

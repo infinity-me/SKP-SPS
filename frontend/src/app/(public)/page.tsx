@@ -79,7 +79,6 @@ export default function Home() {
 
   return (
     <>
-      <NoticeTicker />
       <Hero />
 
       {/* ─── Stats Bar ─────────────────────────────── */}
@@ -659,3 +658,4 @@ export default function Home() {
     </>
   );
 }
+

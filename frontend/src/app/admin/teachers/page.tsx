@@ -27,7 +27,7 @@ function PhotoUploader({ value, onChange }: { value: string; onChange: (v: strin
                 <button type="button" onClick={() => setMode("file")} className={cn("flex-1 py-2 rounded-xl text-xs font-bold", mode==="file"?"bg-primary text-white":"bg-slate-50 text-slate-400")}>Upload File</button>
             </div>
             {mode === "url" ? (
-                <input type="url" placeholder="https://example.com/photo.jpg" value={value?.startsWith("data:") ? "" : value} onChange={e => onChange(e.target.value)}
+                <input type="url" placeholder="https://example.com/photo.jpg" value={value?.startsWith("data:") ? "" : (value || "")} onChange={e => onChange(e.target.value)}
                     className="w-full px-4 py-3 bg-slate-50 rounded-xl text-sm text-primary outline-none focus:ring-2 focus:ring-primary/10" />
             ) : (
                 <div onClick={() => ref.current?.click()} className="border-2 border-dashed border-slate-200 rounded-xl p-6 text-center cursor-pointer hover:border-primary/40 transition-colors">

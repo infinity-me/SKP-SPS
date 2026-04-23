@@ -379,12 +379,53 @@ app.get('/api/public/toppers', async (req, res) => {
             class: s.class,
             topperYear: s.topperYear,
             topperPercent: s.topperPercent,
+            topperRank: s.topperRank,
+            topperMarks: s.topperMarks,
+            topperClass: s.topperClass,
+            photo: s.photo,
             profilePic: s.user.profilePic
         }));
         res.json({ success: true, data: publicToppers });
     } catch (err) {
         res.status(500).json({ error: err.message });
     }
+});
+
+// ── BOARD TOPPERS (dedicated model) ──────────────────────────────────────────
+
+// Seed defaults — idempotent (safe to run on every restart)
+async function seedBoardToppers() {
+    const seeds = [
+        { name: "Anshu Yadav",     boardClass: "Class X", year: "2026", rank: "Joint 1st Rank", marks: "570/600", percentage: "95" },
+        { name: "Nimmi Prajapati", boardClass: "Class X", year: "2026", rank: "Joint 1st Rank", marks: "570/600", percentage: "95" },
+        { name: "Neelu Yadav",     boardClass: "Class X", year: "2026", rank: "2nd Rank",       marks: "560/600", percentage: "93.33" },
+    ];
+    for (const s of seeds) {
+        const exists = await prisma.boardTopper.findFirst({ where: { name: s.name, year: s.year } });
+        if (!exists) await prisma.boardTopper.create({ data: s });
+    }
+
+    // Deduplicate: remove extras keeping only the lowest id per name+year
+    const all = await prisma.boardTopper.findMany({ orderBy: { id: 'asc' } });
+    const seen = new Map();
+    for (const t of all) {
+        const key = `${t.name}||${t.year}`;
+        if (seen.has(key)) {
+            await prisma.boardTopper.delete({ where: { id: t.id } });
+        } else {
+            seen.set(key, true);
+        }
+    }
+}
+seedBoardToppers().catch(console.error);
+
+
+// Public GET — no auth needed
+app.get('/api/board-toppers', async (req, res) => {
+    try {
+        const toppers = await prisma.boardTopper.findMany({ orderBy: [{ year: 'desc' }, { createdAt: 'asc' }] });
+        res.json({ success: true, data: toppers });
+    } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
 // GET PUBLIC RULES (From Circulars)
@@ -486,6 +527,42 @@ const auth = (req, res, next) => {
     }
 };
 
+// ── BOARD TOPPERS admin routes (auth required) ────────────────────────────────
+app.get('/api/admin/board-toppers', auth, requireRole('admin', 'teacher'), async (req, res) => {
+    try {
+        const toppers = await prisma.boardTopper.findMany({ orderBy: [{ year: 'desc' }, { createdAt: 'asc' }] });
+        res.json({ success: true, data: toppers });
+    } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+app.post('/api/admin/board-toppers', auth, requireRole('admin'), async (req, res) => {
+    try {
+        const { name, boardClass, year, rank, marks, percentage, photo } = req.body;
+        if (!name || !boardClass || !year || !percentage) return res.status(400).json({ error: 'name, boardClass, year, percentage are required' });
+        const topper = await prisma.boardTopper.create({ data: { name, boardClass, year, rank, marks, percentage, photo } });
+        res.json({ success: true, data: topper });
+    } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+app.put('/api/admin/board-toppers/:id', auth, requireRole('admin'), async (req, res) => {
+    try {
+        const { name, boardClass, year, rank, marks, percentage, photo } = req.body;
+        const topper = await prisma.boardTopper.update({
+            where: { id: parseInt(req.params.id) },
+            data: { name, boardClass, year, rank, marks, percentage, photo }
+        });
+        res.json({ success: true, data: topper });
+    } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+app.delete('/api/admin/board-toppers/:id', auth, requireRole('admin'), async (req, res) => {
+    try {
+        await prisma.boardTopper.delete({ where: { id: parseInt(req.params.id) } });
+        res.json({ success: true });
+    } catch (err) { res.status(500).json({ error: err.message }); }
+});
+// ─────────────────────────────────────────────────────────────────────────────
+
 // GET CURRENT USER PROFILE
 app.get('/api/auth/me', auth, async (req, res) => {
     try {
@@ -586,11 +663,9 @@ app.get('/api/students', auth, async (req, res) => {
 
 app.post('/api/students', auth, requireRole('admin'), async (req, res) => {
     try {
-        const { firstName, lastName, admissionNo, class: className, section, parentName, phone, isTopper, topperYear, topperPercent, photo } = req.body;
+        const { firstName, lastName, admissionNo, class: className, section, parentName, phone, isTopper, topperYear, topperPercent, topperRank, topperMarks, topperClass, photo } = req.body;
         
         const hashedPassword = await bcrypt.hash("student123", 10);
-        
-        // Handle empty string for phone to avoid unique constraint violations
         const finalPhone = phone && phone.trim() !== "" ? phone.trim() : null;
 
         const user = await prisma.user.create({
@@ -610,7 +685,10 @@ app.post('/api/students', auth, requireRole('admin'), async (req, res) => {
                         photo,
                         isTopper: isTopper === true || isTopper === 'true',
                         topperYear,
-                        topperPercent
+                        topperPercent,
+                        topperRank,
+                        topperMarks,
+                        topperClass
                     }
                 }
             },
@@ -626,12 +704,11 @@ app.post('/api/students', auth, requireRole('admin'), async (req, res) => {
 
 app.put('/api/students/:id', auth, requireRole('admin'), async (req, res) => {
     try {
-        const { admissionNo, class: className, section, parentName, phone, firstName, lastName, isTopper, topperYear, topperPercent, photo } = req.body;
+        const { admissionNo, class: className, section, parentName, phone, firstName, lastName, isTopper, topperYear, topperPercent, topperRank, topperMarks, topperClass, photo } = req.body;
         
         const studentId = parseInt(req.params.id);
         const finalPhone = phone && phone.trim() !== "" ? phone.trim() : null;
         
-        // Update the student fields
         const student = await prisma.student.update({
             where: { id: studentId },
             data: {
@@ -643,7 +720,10 @@ app.put('/api/students/:id', auth, requireRole('admin'), async (req, res) => {
                 photo,
                 isTopper: isTopper === true || isTopper === 'true',
                 topperYear,
-                topperPercent
+                topperPercent,
+                topperRank,
+                topperMarks,
+                topperClass
             },
             include: { user: true }
         });
@@ -1577,7 +1657,24 @@ app.delete('/api/attendance/:id', auth, requireRole('admin', 'teacher'), async (
    📊 RESULTS
 ========================= */
 
-// GET (filter by studentId or term)
+// GET student's OWN results (student role)
+app.get('/api/results/my', auth, async (req, res) => {
+    try {
+        const studentProfile = await prisma.student.findFirst({
+            where: { userId: req.user.id }
+        });
+        if (!studentProfile) return res.status(404).json({ error: "Student profile not found" });
+        const results = await prisma.result.findMany({
+            where: { studentId: studentProfile.id },
+            orderBy: [{ term: 'asc' }, { subject: 'asc' }]
+        });
+        res.json({ success: true, data: results, student: studentProfile });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// GET (filter by studentId or term) — Admin/Teacher
 app.get('/api/results', auth, requireRole('admin', 'teacher'), async (req, res) => {
     try {
         const { studentId, term } = req.query;

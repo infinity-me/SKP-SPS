@@ -2,9 +2,34 @@
 
 import Image from "next/image"
 import { motion } from "framer-motion"
-import { ArrowRight, BookOpen, Calculator, Award } from "lucide-react"
+import { ArrowRight, Trophy } from "lucide-react"
+import { useState, useEffect } from "react"
+import { publicDataService } from "@/lib/api"
+
+const FALLBACK_TOPPERS = [
+    { id: 1, name: "Anshu Yadav",     topperRank: "Joint 1st Rank", topperPercent: "95",    topperMarks: "570/600", topperClass: "Class X", topperYear: "2026" },
+    { id: 2, name: "Nimmi Prajapati", topperRank: "Joint 1st Rank", topperPercent: "95",    topperMarks: "570/600", topperClass: "Class X", topperYear: "2026" },
+    { id: 3, name: "Neelu Yadav",     topperRank: "2nd Rank",       topperPercent: "93.33", topperMarks: "560/600", topperClass: "Class X", topperYear: "2026" },
+]
 
 export default function Hero() {
+    const [toppers, setToppers] = useState<any[]>([])
+
+    useEffect(() => {
+        publicDataService.getBoardToppers()
+            .then(res => {
+                const data: any[] = res?.data?.data || []
+                const sorted = [...data].sort((a, b) => (b.year || "") > (a.year || "") ? 1 : -1)
+                const latest = sorted[0]?.year
+                const recent = sorted.filter(t => t.year === latest).slice(0, 3)
+                setToppers(recent.length > 0 ? recent : FALLBACK_TOPPERS)
+            })
+            .catch(() => setToppers(FALLBACK_TOPPERS))
+    }, [])
+
+    const year = toppers[0]?.year || toppers[0]?.topperYear || "2026"
+    const cls  = toppers[0]?.boardClass || toppers[0]?.topperClass || "Class X"
+
     return (
         <section className="relative h-screen w-full flex items-center justify-center overflow-hidden">
             {/* Cinematic Background Image */}
@@ -21,11 +46,14 @@ export default function Hero() {
                     className="object-cover"
                     priority
                 />
-                <div className="absolute inset-0 bg-gradient-to-r from-primary/90 via-primary/60 to-transparent z-10" />
+                <div className="absolute inset-0 bg-gradient-to-r from-primary/90 via-primary/60 to-primary/30 z-10" />
                 <div className="absolute inset-0 bg-gradient-to-t from-primary via-transparent to-primary/30 z-10" />
             </motion.div>
 
-            <div className="relative z-20 max-w-7xl mx-auto px-6 w-full pt-16 md:mt-20 lg:mt-0">
+            {/* 2-col layout */}
+            <div className="relative z-20 max-w-7xl mx-auto px-6 w-full pt-16 md:mt-20 lg:mt-0 grid grid-cols-1 lg:grid-cols-2 gap-10 items-center">
+
+                {/* LEFT: hero text */}
                 <div className="max-w-2xl">
                     <motion.div
                         initial={{ opacity: 0, y: 20 }}
@@ -72,23 +100,85 @@ export default function Hero() {
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
                         transition={{ delay: 1, duration: 1 }}
-                        className="grid grid-cols-3 gap-4 md:gap-8 mt-12 md:mt-16 pt-8 border-t border-white/10"
+                        className="flex flex-wrap gap-3 mt-10 md:mt-14 pt-8 border-t border-white/10"
                     >
                         {[
-                            { label: "Students", value: "600+", icon: <BookOpen className="text-gold-500" /> },
-                            { label: "Faculty", value: "25+", icon: <Award className="text-gold-500" /> },
-                            { label: "Labs", value: "5+", icon: <Calculator className="text-gold-500" /> },
-                        ].map((stat, i) => (
-                            <div key={i} className="flex flex-col gap-1">
-                                <div className="flex items-center gap-1 md:gap-2 text-white font-bold text-lg md:text-2xl">
-                                    <div className="shrink-0 scale-75 md:scale-100">{stat.icon}</div>
-                                    {stat.value}
-                                </div>
-                                <div className="text-white/50 text-[10px] md:text-sm font-medium uppercase tracking-widest">{stat.label}</div>
+                            { icon: "🎖️", label: "Est. 2009" },
+                            { icon: "📋", label: "CBSE Affiliated" },
+                            { icon: "🏆", label: "100% Board Pass" },
+                            { icon: "🏫", label: "Nursery – Class XII" },
+                        ].map((item, i) => (
+                            <div key={i} className="flex items-center gap-2 px-3 py-2 rounded-xl bg-white/10 backdrop-blur-sm border border-white/10">
+                                <span className="text-sm">{item.icon}</span>
+                                <span className="text-white/80 text-xs font-bold tracking-wide">{item.label}</span>
                             </div>
                         ))}
                     </motion.div>
                 </div>
+
+                {/* RIGHT: Board Results Spotlight — only on desktop */}
+                <motion.div
+                    initial={{ opacity: 0, x: 40 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ duration: 0.9, delay: 0.5 }}
+                    className="hidden lg:flex flex-col gap-4"
+                >
+                    {/* Badge + heading */}
+                    <div className="text-center mb-1">
+                        <span className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-gold-500/20 border border-gold-500/30 text-gold-400 text-[10px] font-black uppercase tracking-widest">
+                            🏆 Board Results {year}
+                        </span>
+                        <p className="text-white font-black text-xl mt-2 tracking-wide">CONGRATULATIONS</p>
+                        <p className="text-gold-400/80 text-xs font-bold uppercase tracking-widest mt-0.5">
+                            {cls} Toppers · CBSE {year}
+                        </p>
+                        <div className="w-16 h-px bg-gold-500/30 mx-auto mt-3" />
+                    </div>
+
+                    {/* Topper rows */}
+                    <div className="flex flex-col gap-3">
+                        {toppers.map((t, i) => (
+                            <motion.div
+                                key={t.id || i}
+                                initial={{ opacity: 0, x: 20 }}
+                                animate={{ opacity: 1, x: 0 }}
+                                transition={{ delay: 0.7 + i * 0.13 }}
+                                className="flex items-center gap-4 px-5 py-4 rounded-2xl bg-white/10 backdrop-blur-md border border-gold-500/20 hover:bg-white/15 hover:border-gold-500/40 transition-all group"
+                            >
+                                {/* Trophy icon */}
+                                <div className="w-11 h-11 rounded-xl bg-gold-500/20 border border-gold-500/30 flex items-center justify-center flex-shrink-0 group-hover:bg-gold-500/30 transition-colors">
+                                    <Trophy size={20} className="text-gold-400" />
+                                </div>
+                                {/* Name + rank + marks */}
+                                <div className="flex-1 min-w-0">
+                                    <p className="font-black text-white text-sm uppercase tracking-wide truncate">{t.name}</p>
+                                    <p className="text-gold-400/80 text-[10px] font-bold mt-0.5">{t.rank || t.topperRank || `Rank ${i + 1}`}</p>
+                                    {(t.marks || t.topperMarks) && (
+                                        <p className="text-white/40 text-[10px] font-bold">Marks: {t.marks || t.topperMarks}</p>
+                                    )}
+                                </div>
+                                {/* Percentage circle */}
+                                <div className="flex-shrink-0 w-14 h-14 rounded-full bg-gold-500 flex items-center justify-center shadow-lg shadow-gold-500/30 group-hover:scale-110 transition-transform">
+                                    <span className="text-primary font-black text-xs text-center leading-tight">
+                                        {t.percentage || t.topperPercent}%
+                                    </span>
+                                </div>
+                            </motion.div>
+                        ))}
+                    </div>
+
+                    {/* Footer links */}
+                    <p className="text-center text-white/35 italic text-xs font-bold mt-1">
+                        &quot;We are proud of you!&quot; — SKP Sainik School
+                    </p>
+                    <a
+                        href="/toppers"
+                        className="text-center text-gold-400 text-xs font-bold hover:text-gold-300 transition-colors underline underline-offset-2"
+                    >
+                        View Full Hall of Fame →
+                    </a>
+                </motion.div>
+
             </div>
 
             {/* Scroll indicator */}

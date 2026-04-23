@@ -43,6 +43,9 @@ model Student {
   isTopper     Boolean  @default(false)
   topperYear   String?
   topperPercent String?
+  topperRank   String?  // e.g. "1st Rank", "Joint 1st Rank"
+  topperMarks  String?  // e.g. "570/600"
+  topperClass  String?  // e.g. "Class X", "Class XII"
   
   fees         Fee[]
   attendance   Attendance[]
@@ -242,3 +245,16 @@ model PhotoCategory {
   createdAt DateTime @default(now())
 }
 
+// ─── Board Result Toppers ─────────────────────────────────────────────
+model BoardTopper {
+  id          Int      @id @default(autoincrement())
+  name        String
+  boardClass  String   // e.g. "Class X", "Class XII"
+  year        String   // e.g. "2026"
+  rank        String?  // e.g. "Joint 1st Rank", "2nd Rank"
+  marks       String?  // e.g. "570/600"
+  percentage  String   // e.g. "95" or "93.33"
+  photo       String?  @db.Text
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}

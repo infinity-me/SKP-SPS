@@ -20,7 +20,8 @@ import {
     X,
     ToggleLeft,
     Edit3,
-    Tag
+    Tag,
+    Trophy
 } from "lucide-react"
 import { signOut } from "next-auth/react"
 
@@ -35,6 +36,8 @@ const menuItems = [
         group: "Management", items: [
             { name: "Students", href: "/admin/students", icon: <GraduationCap size={18} /> },
             { name: "Teachers", href: "/admin/teachers", icon: <Users size={18} /> },
+            { name: "Results & Marks", href: "/admin/results", icon: <FileText size={18} /> },
+            { name: "Board Toppers", href: "/admin/toppers", icon: <Trophy size={18} /> },
             { name: "Fees & Finance", href: "/admin/fees", icon: <CreditCard size={18} /> },
             { name: "Admissions", href: "/admin/admissions", icon: <ToggleLeft size={18} /> },
         ]

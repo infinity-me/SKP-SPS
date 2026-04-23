@@ -91,12 +91,23 @@ export const authService = {
 
 export const publicDataService = {
     getTeachers: () => api.get('/public/teachers'),
-    getToppers: () => api.get('/public/toppers'),
+    getToppers: () => api.get('/public/toppers'),       // student-based (legacy)
+    getBoardToppers: () => api.get('/board-toppers'),   // dedicated BoardTopper table
     getRules: () => api.get('/public/rules'),
     getStats: () => api.get('/public/stats'),
     getNotices: () => api.get('/public/notices'),
     getUpcomingEvents: () => api.get('/public/events/upcoming'),
     getRecentPhotos: () => api.get('/public/photos/recent'),
+};
+
+
+/* ================= BOARD TOPPERS (admin) ================= */
+
+export const boardTopperService = {
+    getAll: () => api.get('/admin/board-toppers'),
+    create: (data: any) => api.post('/admin/board-toppers', data),
+    update: (id: number, data: any) => api.put(`/admin/board-toppers/${id}`, data),
+    delete: (id: number) => api.delete(`/admin/board-toppers/${id}`),
 };
 
 
@@ -132,8 +143,18 @@ export const attendanceService = {
 /* ================= RESULTS ================= */
 
 export const resultService = {
-    getForStudent: (studentId: number) => api.get(`/results?studentId=${studentId}`),
-    uploadResult: (data: any) => api.post('/results', data),
+    // Admin: get results for a specific student or term
+    getAll: (params?: { studentId?: number; term?: string }) => {
+        const qs = new URLSearchParams()
+        if (params?.studentId) qs.set('studentId', String(params.studentId))
+        if (params?.term) qs.set('term', params.term)
+        return api.get(`/results?${qs.toString()}`)
+    },
+    create: (data: any) => api.post('/results', data),
+    update: (id: number, data: any) => api.put(`/results/${id}`, data),
+    delete: (id: number) => api.delete(`/results/${id}`),
+    // Student: get own results
+    getMy: () => api.get('/results/my'),
 };
 
 
