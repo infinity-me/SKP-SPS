@@ -116,6 +116,39 @@ export default function Hero() {
                         </div>
                     </motion.div>
 
+                    {/* ── Mobile Toppers Strip (hidden on lg+) ── */}
+                    {toppers.length > 0 && (
+                        <motion.div
+                            initial={{ opacity: 0, y: 16 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ delay: 0.8, duration: 0.7 }}
+                            className="lg:hidden mt-6"
+                        >
+                            <div className="flex items-center gap-2 mb-3">
+                                <span className="text-[10px] font-black uppercase tracking-widest text-gold-400">🏆 Board Results {year}</span>
+                                <div className="flex-1 h-px bg-gold-500/20" />
+                            </div>
+                            <div className="flex flex-col gap-2">
+                                {toppers.map((t, i) => (
+                                    <div key={t.id || i}
+                                        className="flex items-center gap-3 px-4 py-3 rounded-xl bg-white/10 backdrop-blur-sm border border-gold-500/20">
+                                        <Trophy size={14} className="text-gold-400 flex-shrink-0" />
+                                        <div className="flex-1 min-w-0">
+                                            <p className="font-black text-white text-xs uppercase truncate">{t.name}</p>
+                                            <p className="text-gold-400/70 text-[10px] font-bold">{t.rank || t.topperRank || `Rank ${i+1}`}</p>
+                                        </div>
+                                        <div className="flex-shrink-0 w-10 h-10 rounded-full bg-gold-500 flex items-center justify-center shadow-md">
+                                            <span className="text-primary font-black text-[10px]">{t.percentage || t.topperPercent}%</span>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                            <a href="/toppers" className="block text-center text-gold-400/70 text-[10px] font-bold mt-2 hover:text-gold-400 transition-colors">
+                                View Full Hall of Fame →
+                            </a>
+                        </motion.div>
+                    )}
+
                     <motion.div
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
