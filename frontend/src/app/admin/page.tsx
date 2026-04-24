@@ -55,7 +55,7 @@ export default function AdminDashboard() {
         const fetchData = async () => {
             try {
                 const [admRes, stuRes, teaRes] = await Promise.all([
-                    admissionService.getAdmissions(),
+                    admissionService.getAll(),
                     studentService.getAll(),
                     teacherApplicationService.getAll()
                 ])
@@ -207,15 +207,15 @@ export default function AdminDashboard() {
                                         <p className="text-sm font-bold text-primary">{row.firstName} {row.lastName}</p>
                                         <p className="text-[10px] text-slate-400">{row.email}</p>
                                     </td>
-                                    <td className="px-8 py-4 text-sm text-slate-500 font-medium">Class {row.class}</td>
+                                    <td className="px-8 py-4 text-sm text-slate-500 font-medium">{row.classApplied}</td>
                                     <td className="px-8 py-4 text-sm text-slate-500 font-medium">
-                                        {new Date(row.id).toLocaleDateString()}
+                                        {new Date(row.createdAt).toLocaleDateString('en-IN')}
                                     </td>
                                     <td className="px-8 py-4">
                                         <select
                                             value={row.status}
                                             onChange={async (e) => {
-                                                await admissionService.update(row.id, { status: e.target.value });
+                                                await admissionService.updateStatus(row.id, { status: e.target.value });
                                                 window.location.reload(); // Quick refresh for demo
                                             }}
                                             className={cn(

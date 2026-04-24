@@ -1,26 +1,76 @@
 const prisma = require('../db');
 
 /**
- * Aggregates public and personal context for the AI Chatbot
+ * Builds a clean, structured context string for the AI chatbot.
+ * Includes live school data (notices, events, fee structure) and
+ * personal student/teacher data when the user is authenticated.
  */
 async function getChatContext(userId = null) {
-    let context = "";
+    const lines = [];
 
-    // 1. PUBLIC CONTEXT (Always included)
+    // ── 1. PUBLIC SCHOOL CONTEXT ─────────────────────────────────────────────
     try {
-        const notices = await prisma.notice.findMany({ where: { isActive: true }, take: 5, orderBy: { createdAt: 'desc' } });
-        const events = await prisma.calendarEvent.findMany({ take: 5, orderBy: { date: 'asc' }, where: { date: { gte: new Date() } } });
-        const feeStructure = await prisma.feeStructure.findMany();
+        const [notices, events, feeStructures] = await Promise.all([
+            prisma.notice.findMany({
+                where: { isActive: true },
+                take: 5,
+                orderBy: { createdAt: 'desc' },
+                select: { message: true, createdAt: true }
+            }),
+            prisma.calendarEvent.findMany({
+                take: 6,
+                orderBy: { date: 'asc' },
+                where: { date: { gte: new Date() } },
+                select: { title: true, date: true, description: true }
+            }),
+            prisma.feeStructure.findMany({
+                select: { className: true, feeType: true, amount: true }
+            })
+        ]);
 
-        context += "\n--- PUBLIC SCHOOL UPDATES ---\n";
-        context += "Active Notices: " + notices.map(n => n.message).join(" | ") + "\n";
-        context += "Upcoming Events: " + events.map(e => `${e.title} on ${e.date.toDateString()}`).join(" | ") + "\n";
-        context += "Fee Structure: " + feeStructure.map(f => `${f.className}: ${f.feeType} = ₹${f.amount}`).join(" | ") + "\n";
+        // Notices
+        if (notices.length > 0) {
+            lines.push("=== LATEST SCHOOL NOTICES ===");
+            notices.forEach(n => {
+                lines.push(`- ${n.message}`);
+            });
+        } else {
+            lines.push("=== LATEST SCHOOL NOTICES ===\n- No active notices at this time.");
+        }
+
+        // Events
+        if (events.length > 0) {
+            lines.push("\n=== UPCOMING EVENTS & HOLIDAYS ===");
+            events.forEach(e => {
+                const dateStr = new Date(e.date).toLocaleDateString('en-IN', { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' });
+                lines.push(`- ${e.title} on ${dateStr}${e.description ? ` (${e.description})` : ''}`);
+            });
+        } else {
+            lines.push("\n=== UPCOMING EVENTS & HOLIDAYS ===\n- No upcoming events scheduled.");
+        }
+
+        // Fee Structure
+        if (feeStructures.length > 0) {
+            lines.push("\n=== FEE STRUCTURE ===");
+            // Group by className
+            const grouped = {};
+            feeStructures.forEach(f => {
+                if (!grouped[f.className]) grouped[f.className] = [];
+                grouped[f.className].push(`${f.feeType}: ₹${f.amount}`);
+            });
+            Object.entries(grouped).forEach(([cls, fees]) => {
+                lines.push(`Class ${cls}: ${fees.join(' | ')}`);
+            });
+        } else {
+            lines.push("\n=== FEE STRUCTURE ===\n- Please contact the school office for current fee details.");
+        }
+
     } catch (err) {
-        console.error("Error fetching public context:", err);
+        console.error("[ContextManager] Error fetching public context:", err.message);
+        lines.push("Note: Live school data is temporarily unavailable.");
     }
 
-    // 2. PERSONAL CONTEXT (If authenticated)
+    // ── 2. PERSONAL CONTEXT (authenticated users only) ────────────────────────
     if (userId) {
         try {
             const user = await prisma.user.findUnique({
@@ -28,32 +78,63 @@ async function getChatContext(userId = null) {
                 include: {
                     studentProfile: {
                         include: {
-                            fees: { where: { status: 'pending' } },
-                            attendance: { take: 10, orderBy: { date: 'desc' } },
-                            results: true
+                            fees: {
+                                where: { status: 'pending' },
+                                select: { type: true, amount: true, dueDate: true }
+                            },
+                            attendance: {
+                                take: 10,
+                                orderBy: { date: 'desc' },
+                                select: { date: true, status: true }
+                            },
+                            results: {
+                                select: { subject: true, marks: true, total: true, term: true }
+                            }
                         }
                     },
-                    teacherProfile: true
+                    teacherProfile: {
+                        select: { staffId: true, designation: true, subject: true }
+                    }
                 }
             });
 
-            if (user && user.studentProfile) {
+            if (user?.studentProfile) {
                 const s = user.studentProfile;
-                context += "\n--- PERSONAL STUDENT DATA ---\n";
-                context += `Name: ${user.name}, Class: ${s.class}-${s.section}, Admission No: ${s.admissionNo}\n`;
-                context += `Pending Fees: ${s.fees.length > 0 ? s.fees.map(f => `${f.type}: ₹${f.amount}`).join(", ") : "None"}\n`;
-                context += `Recent Attendance: ${s.attendance.map(a => `${a.date.toDateString()}: ${a.status}`).join(", ")}\n`;
-                context += `Latest Results: ${s.results.map(r => `${r.subject}: ${r.marks}/${r.total} (${r.term})`).join(", ")}\n`;
-            } else if (user && user.teacherProfile) {
-                context += "\n--- PERSONAL TEACHER DATA ---\n";
-                context += `Staff ID: ${user.teacherProfile.staffId}, Designation: ${user.teacherProfile.designation}\n`;
+                lines.push("\n=== YOUR PERSONAL DATA ===");
+                lines.push(`Name: ${user.name}`);
+                lines.push(`Class: ${s.class}-${s.section} | Admission No: ${s.admissionNo}`);
+
+                if (s.fees.length > 0) {
+                    lines.push(`Pending Fees: ${s.fees.map(f => `${f.type} ₹${f.amount}${f.dueDate ? ` (due ${new Date(f.dueDate).toLocaleDateString('en-IN')})` : ''}`).join(', ')}`);
+                } else {
+                    lines.push("Pending Fees: None (all clear!)");
+                }
+
+                if (s.attendance.length > 0) {
+                    const presentCount = s.attendance.filter(a => a.status === 'present').length;
+                    lines.push(`Recent Attendance (last ${s.attendance.length} days): ${presentCount} present, ${s.attendance.length - presentCount} absent`);
+                }
+
+                if (s.results.length > 0) {
+                    lines.push("Latest Results:");
+                    s.results.slice(0, 5).forEach(r => {
+                        lines.push(`  ${r.subject}: ${r.marks}/${r.total} (${r.term})`);
+                    });
+                }
+
+            } else if (user?.teacherProfile) {
+                const t = user.teacherProfile;
+                lines.push("\n=== YOUR STAFF DATA ===");
+                lines.push(`Staff ID: ${t.staffId} | Designation: ${t.designation}`);
+                if (t.subject) lines.push(`Subject: ${t.subject}`);
             }
+
         } catch (err) {
-            console.error("Error fetching personal context:", err);
+            console.error("[ContextManager] Error fetching personal context:", err.message);
         }
     }
 
-    return context;
+    return lines.join('\n');
 }
 
 module.exports = { getChatContext };

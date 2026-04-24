@@ -12,6 +12,7 @@ const prisma = require('./db');
 
 const fs = require('fs');
 const chatRoutes = require('./routes/chat');
+const { sendAdmissionAlert, sendTeacherApplicationAlert } = require('./utils/mailer');
 const { requireRole } = require('./middleware/roleAuth');
 
 const app = express();
@@ -885,6 +886,10 @@ app.post('/api/teacher-application', async (req, res) => {
                 status: "pending"
             }
         });
+
+        // Fire-and-forget email notification
+        sendTeacherApplicationAlert(application).catch(() => {});
+
         res.json({ 
             success: true, 
             message: "Application submitted successfully!", 
@@ -1140,24 +1145,80 @@ app.delete('/api/circulars/:id', auth, requireRole('admin'), async (req, res) =>
    📝 ADMISSIONS
 ========================= */
 
-app.get('/api/admission', async (req, res) => {
-    const data = await prisma.admission.findMany();
-    res.json({ success: true, data });
+// Public: submit application
+app.post('/api/admission', async (req, res) => {
+    try {
+        const {
+            firstName, lastName, dob, gender, classApplied,
+            fatherName, motherName, occupation, annualIncome,
+            phone, email, address,
+            previousSchool, lastClass, reasonLeaving, achievements
+        } = req.body;
+
+        if (!firstName || !lastName || !phone || !email || !classApplied) {
+            return res.status(400).json({ success: false, message: "Please fill all required fields." });
+        }
+
+        const submission = await prisma.admission.create({
+            data: {
+                firstName, lastName, dob, gender, classApplied,
+                fatherName, motherName, occupation, annualIncome,
+                phone, email, address,
+                previousSchool, lastClass, reasonLeaving, achievements,
+                status: "pending"
+            }
+        });
+
+        // Fire-and-forget email notification (never blocks response)
+        sendAdmissionAlert(submission).catch(() => {});
+
+        res.json({ success: true, message: "Application submitted successfully!", data: submission });
+    } catch (err) {
+        console.error("Admission submit error:", err);
+        res.status(500).json({ success: false, message: "Failed to submit application. Please try again." });
+    }
 });
 
-app.post('/api/admission', async (req, res) => {
-    const submission = await prisma.admission.create({
-        data: {
-            ...req.body,
-            status: "pending"
-        }
-    });
+// Admin: get all applications (with optional status filter)
+app.get('/api/admission', auth, requireRole('admin'), async (req, res) => {
+    try {
+        const { status } = req.query;
+        const where = status && status !== 'all' ? { status } : {};
+        const [data, total] = await Promise.all([
+            prisma.admission.findMany({
+                where,
+                orderBy: { createdAt: 'desc' }
+            }),
+            prisma.admission.count()
+        ]);
+        res.json({ success: true, data, total });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
 
-    res.json({
-        success: true,
-        message: "Application submitted!",
-        data: submission
-    });
+// Admin: update application status / notes
+app.put('/api/admission/:id', auth, requireRole('admin'), async (req, res) => {
+    try {
+        const { status, adminNotes } = req.body;
+        const updated = await prisma.admission.update({
+            where: { id: parseInt(req.params.id) },
+            data: { status, adminNotes }
+        });
+        res.json({ success: true, data: updated });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+});
+
+// Admin: delete application
+app.delete('/api/admission/:id', auth, requireRole('admin'), async (req, res) => {
+    try {
+        await prisma.admission.delete({ where: { id: parseInt(req.params.id) } });
+        res.json({ success: true, message: "Application deleted" });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
 });
 
 

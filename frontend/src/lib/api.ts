@@ -198,8 +198,9 @@ export const circularService = {
 
 export const admissionService = {
     submit: (data: any) => api.post('/admission', data),
-    getAdmissions: () => api.get('/admission'),
-    update: (id: number, data: any) => api.put(`/admission/${id}`, data),
+    getAll: (status?: string) => api.get(`/admission${status && status !== 'all' ? `?status=${status}` : ''}`),
+    updateStatus: (id: number, data: { status: string; adminNotes?: string }) => api.put(`/admission/${id}`, data),
+    remove: (id: number) => api.delete(`/admission/${id}`),
 };
 
 
