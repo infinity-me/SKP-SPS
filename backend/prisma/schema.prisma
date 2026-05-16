@@ -233,6 +233,22 @@ model BotRule {
   updatedAt DateTime @updatedAt
 }
 
+// ─── Chatbot AI Settings ─────────────────────────────────────────────
+model ChatbotSetting {
+  id               Int      @id @default(1)
+  schoolFullName   String   @default("SKP Sainik Public School, Manihari, Kannauj, UP")
+  founded          String   @default("2009 by Shri Satyadev Kushwaha")
+  affiliation      String   @default("CBSE")
+  principal        String   @default("Mrs. Shobha Sharma")
+  phone            String   @default("+91 9454331861")
+  email            String   @default("skpspsmanihari09@gmail.com")
+  admissionInfo    String   @default("Admissions open for 2026-27: Classes Nursery to XII")
+  admissionPage    String   @default("skpsps.in/admission")
+  customSystemNote String   @default("") @db.Text  // Extra instructions for the AI
+  botPersonality   String   @default("Friendly, professional, and disciplined — like a helpful school counsellor.")
+  updatedAt        DateTime @updatedAt
+}
+
 // ─── Admission Settings ─────────────────────────────────────────────
 model AdmissionSetting {
   id               Int      @id @default(1)

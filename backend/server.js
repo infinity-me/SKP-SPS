@@ -308,8 +308,10 @@ app.get('/api/auth/google/callback',
 
 // 🤖 CHATBOT ROUTE
 const botRuleRoutes = require('./routes/botRule');
+const chatbotSettingsRoutes = require('./routes/chatbotSettings');
 app.use('/api/chat', chatRoutes);
 app.use('/api/bot-rules', botRuleRoutes);
+app.use('/api/chatbot-settings', chatbotSettingsRoutes);
 
 // VERIFY SCHOOL ID (Check existence for student/teacher)
 app.get('/api/auth/verify-id', async (req, res) => {

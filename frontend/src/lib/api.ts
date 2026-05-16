@@ -303,6 +303,13 @@ export const botRuleService = {
     delete: (id: number) => api.delete(`/bot-rules/${id}`),
 };
 
+/* ================= CHATBOT SETTINGS ================= */
+
+export const chatbotSettingsService = {
+    get: () => api.get('/chatbot-settings'),
+    update: (data: any) => api.put('/chatbot-settings', data),
+};
+
 /* ================= ADMISSION SETTINGS ================= */
 
 export const admissionSettingsService = {

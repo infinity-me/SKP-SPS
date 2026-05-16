@@ -17,6 +17,7 @@ import {
     BarChart3,
     LogOut,
     MessageSquare,
+    Bot,
     X,
     ToggleLeft,
     Edit3,
@@ -58,7 +59,11 @@ const menuItems = [
         group: "System", items: [
             { name: "Settings", href: "/admin/settings", icon: <Settings size={18} /> },
             { name: "Start Popup", href: "/admin/popup", icon: <ImageIcon size={18} /> },
-            { name: "Bot Management", href: "/admin/bot-rules", icon: <MessageSquare size={18} /> },
+        ]
+    },
+    {
+        group: "Chatbot", items: [
+            { name: "Chatbot Management", href: "/admin/bot-rules", icon: <Bot size={18} /> },
         ]
     }
 ]
