@@ -3,8 +3,9 @@
 import { useState } from "react"
 import AdminSidebar from "@/components/AdminSidebar"
 import { motion } from "framer-motion"
-import { Menu } from "lucide-react"
+import { Menu, ExternalLink } from "lucide-react"
 import { cn } from "@/lib/utils"
+import Link from "next/link"
 
 export default function AdminLayout({
     children,
@@ -31,6 +32,13 @@ export default function AdminLayout({
                         <div className="h-10 w-1 pt-1 bg-gold-500 rounded-full hidden sm:block" />
                         <h2 className="font-heading font-bold text-primary">Control Center</h2>
                     </div>
+                    <Link
+                        href="/"
+                        className="flex items-center gap-2 px-4 py-2 text-sm font-bold text-slate-500 border border-slate-200 rounded-xl hover:bg-slate-50 hover:text-primary hover:border-slate-300 transition-all"
+                    >
+                        <ExternalLink size={15} />
+                        <span className="hidden sm:inline">View Website</span>
+                    </Link>
                 </header>
                 <div className="p-4 md:p-8">
                     <motion.div

@@ -22,7 +22,8 @@ import {
     ToggleLeft,
     Edit3,
     Tag,
-    Trophy
+    Trophy,
+    ExternalLink
 } from "lucide-react"
 import { signOut } from "next-auth/react"
 
@@ -144,7 +145,14 @@ export default function AdminSidebar({ isOpen, onClose }: AdminSidebarProps) {
                     ))}
                 </div>
 
-                <div className="p-4 border-t border-slate-50">
+                <div className="p-4 border-t border-slate-50 space-y-1">
+                    <Link
+                        href="/"
+                        className="w-full flex items-center gap-3 px-4 py-3 text-sm font-bold text-slate-500 hover:bg-slate-50 hover:text-primary rounded-xl transition-all"
+                    >
+                        <ExternalLink size={18} />
+                        View Website
+                    </Link>
                     <button
                         onClick={handleSignOut}
                         className="w-full flex items-center gap-3 px-4 py-3 text-sm font-bold text-red-500 hover:bg-red-50 rounded-xl transition-all"
