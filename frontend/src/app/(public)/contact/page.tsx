@@ -2,8 +2,11 @@
 
 import { motion } from "framer-motion"
 import { Mail, Phone, MapPin, Clock, Send } from "lucide-react"
+import { useSiteSettings } from "@/context/SiteSettingsContext"
 
 export default function ContactPage() {
+    const s = useSiteSettings()
+
     return (
         <div className="pt-24 min-h-screen bg-slate-50">
             <section className="bg-primary py-20 px-6 text-center">
@@ -18,35 +21,35 @@ export default function ContactPage() {
                     <div className="space-y-12">
                         <div className="space-y-6">
                             <h2 className="text-3xl font-heading font-bold text-primary">Get in Touch</h2>
-                            <p className="text-muted-foreground leading-relaxed">Whether you're a prospective parent, a student, or a community member, we'd love to hear from you.</p>
+                            <p className="text-muted-foreground leading-relaxed">Whether you&apos;re a prospective parent, a student, or a community member, we&apos;d love to hear from you.</p>
                         </div>
 
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                            <ContactCard 
-                                icon={<Phone />} 
-                                title="Phone" 
-                                detail="9454331861, 8449790561" 
-                                sub="Mon-Sat, 8am-4pm" 
+                            <ContactCard
+                                icon={<Phone />}
+                                title="Phone"
+                                detail={s.phone}
+                                sub="Mon-Sat, 8am-4pm"
                             />
-                            <ContactCard 
-                                icon={<Mail />} 
-                                title="Email" 
-                                detail="skpspsmanihari09@gmail.com" 
-                                sub="Response within 24hrs" 
-                                href="mailto:skpspsmanihari09@gmail.com"
+                            <ContactCard
+                                icon={<Mail />}
+                                title="Email"
+                                detail={s.primaryEmail}
+                                sub="Response within 24hrs"
+                                href={`mailto:${s.primaryEmail}`}
                             />
-                            <ContactCard 
-                                icon={<MapPin />} 
-                                title="Location" 
-                                detail="Manihari, Deoria, UP" 
-                                sub="View on Google Maps" 
-                                href="https://www.google.com/maps/search/?api=1&query=SKP+Sainik+Public+School+Manihari+Deoria"
+                            <ContactCard
+                                icon={<MapPin />}
+                                title="Location"
+                                detail={s.address}
+                                sub="View on Google Maps"
+                                href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(s.schoolName + " " + s.address)}`}
                             />
-                            <ContactCard 
-                                icon={<Clock />} 
-                                title="Hours" 
-                                detail="8:00 AM - 4:00 PM" 
-                                sub="Administration Working Hours" 
+                            <ContactCard
+                                icon={<Clock />}
+                                title="Hours"
+                                detail="8:00 AM - 4:00 PM"
+                                sub="Administration Working Hours"
                             />
                         </div>
 
