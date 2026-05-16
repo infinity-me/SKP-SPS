@@ -313,6 +313,10 @@ app.use('/api/chat', chatRoutes);
 app.use('/api/bot-rules', botRuleRoutes);
 app.use('/api/chatbot-settings', chatbotSettingsRoutes);
 
+// ⚙️ SYSTEM SETTINGS
+const systemSettingsRoutes = require('./routes/systemSettings');
+app.use('/api/system-settings', systemSettingsRoutes);
+
 // VERIFY SCHOOL ID (Check existence for student/teacher)
 app.get('/api/auth/verify-id', async (req, res) => {
     try {

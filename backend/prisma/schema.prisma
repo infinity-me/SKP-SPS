@@ -233,6 +233,39 @@ model BotRule {
   updatedAt DateTime @updatedAt
 }
 
+// ─── System / School Settings ─────────────────────────────────────────
+model SystemSetting {
+  id                  Int      @id @default(1)
+  // General Profile
+  schoolName          String   @default("SKP Sainik Public School")
+  registrationNo      String   @default("REGN-2026-UP-001")
+  primaryEmail        String   @default("skpspsmanihari09@gmail.com")
+  phone               String   @default("9454331861, 8449790561")
+  address             String   @default("Manihari, Kannauj, Uttar Pradesh")
+  website             String   @default("https://skpsps.in")
+  principalName       String   @default("Mrs. Shobha Sharma")
+  established         String   @default("2009")
+  affiliation         String   @default("CBSE")
+  // Notifications
+  notifyAdmission     Boolean  @default(true)
+  notifyFeePayment    Boolean  @default(true)
+  notifyNewTeacher    Boolean  @default(false)
+  notifySystemAlerts  Boolean  @default(true)
+  emailDigestFreq     String   @default("Daily")
+  // Security
+  twoFactorAuth       Boolean  @default(false)
+  ipWhitelisting      Boolean  @default(false)
+  sessionTimeout      Int      @default(60) // minutes
+  allowedIPs          String   @default("") @db.Text
+  // Branding & UI
+  primaryColor        String   @default("#0a2342")
+  accentColor         String   @default("#d4af37")
+  logoUrl             String   @default("")
+  faviconUrl          String   @default("")
+  schoolTagline       String   @default("Shaping Tomorrow's Leaders Today")
+  updatedAt           DateTime @updatedAt
+}
+
 // ─── Chatbot AI Settings ─────────────────────────────────────────────
 model ChatbotSetting {
   id               Int      @id @default(1)

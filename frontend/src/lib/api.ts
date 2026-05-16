@@ -310,6 +310,13 @@ export const chatbotSettingsService = {
     update: (data: any) => api.put('/chatbot-settings', data),
 };
 
+/* ================= SYSTEM SETTINGS ================= */
+
+export const systemSettingsService = {
+    get: () => api.get('/system-settings'),
+    update: (data: any) => api.put('/system-settings', data),
+};
+
 /* ================= ADMISSION SETTINGS ================= */
 
 export const admissionSettingsService = {
